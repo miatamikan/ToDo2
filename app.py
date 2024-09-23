@@ -12,7 +12,7 @@ db = SQLAlchemy(app)
 class Person(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False, unique=True)
-    order = db.Column(db.Integer, nullable=False, default=0)  # 追加
+    order = db.Column(db.Integer, nullable=False, default=0)
     tasks = db.relationship('Task', backref='person', lazy=True, order_by='Task.priority')
 
 class Task(db.Model):
@@ -28,6 +28,11 @@ def create_initial_data():
         person_b = Person(name='Bさん', order=1)
         db.session.add_all([person_a, person_b])
         db.session.commit()
+
+# テーブル作成（初回起動時のみ）
+with app.app_context():
+    db.create_all()
+    create_initial_data()
 
 # ルートページ
 @app.route('/')
@@ -47,7 +52,6 @@ def person_tasks(person_id):
     person = Person.query.get_or_404(person_id)
     tasks = Task.query.filter_by(person_id=person_id).order_by(Task.priority).all()
     return render_template('task_list.html', tasks=tasks, person_name=person.name)
-
 
 # タスクの順序更新
 @app.route('/update_task_order', methods=['POST'])
@@ -145,8 +149,4 @@ def delete_task(id):
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        create_initial_data()
-
     app.run(debug=False)
