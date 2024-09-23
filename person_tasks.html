@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ person.name }}のタスク一覧</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <script src="{{ url_for('static', filename='sortable.min.js') }}"></script>
+</head>
+<body>
+<div class="container mt-5">
+    <h1>{{ person.name }}のタスク</h1>
+    <a href="/" class="btn btn-secondary">トップページに戻る</a>
+    <ul id="task-list" class="list-group mt-3">
+        {% for task in tasks %}
+        <li class="list-group-item" data-task-id="{{ task.id }}">
+            {{ task.content | safe }}
+            <a href="/edit/{{ task.id }}" class="btn btn-sm btn-info float-right">編集</a>
+            <a href="/delete/{{ task.id }}" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<script>
+    var taskList = document.getElementById('task-list');
+    new Sortable(taskList, {
+        animation: 150,
+        onEnd: function (evt) {
+            let tasks = Array.from(taskList.children).map(task => task.dataset.taskId);
+            fetch('/update_task_order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({task_order: tasks})
+            }).then(response => response.json())
+            .then(data => console.log(data));  // デバッグ用
+        }
+    });
+</script>
+</body>
+</html>

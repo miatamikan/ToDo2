@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>担当者の編集</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h1>担当者の編集</h1>
+    <a href="/" class="btn btn-secondary mb-3">トップページに戻る</a>
+    <form method="POST">
+        <div class="form-group">
+            <label>担当者の名前</label>
+            <input type="text" name="name" class="form-control">
+            <button type="submit" name="action" value="add" class="btn btn-primary mt-2">追加</button>
+        </div>
+        <div class="form-group">
+            <label>担当者を選んで名前を編集</label>
+            <select name="person_id" class="form-control">
+                {% for person in people %}
+                <option value="{{ person.id }}">{{ person.name }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="new_name" class="form-control mt-2" placeholder="新しい名前">
+            <button type="submit" name="action" value="edit" class="btn btn-info mt-2">名前を変更</button>
+            <button type="submit" name="action" value="delete" class="btn btn-danger mt-2" onclick="return confirm('本当に削除しますか？');">削除</button>
+        </div>
+    </form>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="alert alert-info mt-3">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+</div>
+</body>
+</html>
