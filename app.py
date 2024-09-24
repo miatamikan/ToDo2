@@ -2,13 +2,18 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, f
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 import os
+import configparser
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # セキュリティ上、環境変数から読み込むことを推奨します
 csrf = CSRFProtect(app)
 
-# パスワード設定（ここでパスワードを変更できます）
-PASSWORD = '1111'
+# 設定ファイルの読み込み
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+# パスワードとシークレットキーを設定ファイルから取得
+PASSWORD = config['DEFAULT'].get('PASSWORD', '1111')  # デフォルト値は '1111'
+app.secret_key = config['DEFAULT'].get('SECRET_KEY', 'your_secret_key')  # デフォルト値は 'your_secret_key'
 
 # 永続ディスクのマウントポイント
 PERSISTENT_DIR = '/persistent'
@@ -78,8 +83,6 @@ def index():
         return redirect(url_for('login'))
     people = Person.query.order_by(Person.order).all()
     return render_template('index.html', people=people)
-
-# 以下、他のルート関数はセッションチェックを追加します
 
 # 全タスクの取得
 @app.route('/all_tasks')
