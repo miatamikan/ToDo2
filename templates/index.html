@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>ToDoリスト</title>
+    <meta name="robots" content="noindex">
+    <!-- BootstrapとjQuery -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Sortable.js -->
     <script src="{{ url_for('static', filename='js/Sortable.min.js') }}"></script>
     <style>
         /* サイドバーとメインコンテンツの幅調整 */
@@ -19,7 +22,7 @@
         .main-content {
             width: 80%;
             float: left;
-            padding-top: 20px;  /* 上部に余白を追加 */
+            padding-top: 20px;
         }
         .sidebar-bottom-link {
             position: absolute;
@@ -53,6 +56,19 @@
 </head>
 <body>
 <div class="container-fluid">
+    <!-- ヘッダー -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">ToDoリスト</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">ログアウト</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- コンテンツ -->
     <div class="row">
         <!-- サイドバー -->
         <div class="sidebar bg-light">
@@ -74,7 +90,8 @@
 
         <!-- メインコンテンツ -->
         <div class="main-content">
-            <!-- 検索窓をここに移動 -->
+            <!-- 検索窓 -->
+            <label for="task-search" class="sr-only">タスクを検索</label>
             <input type="text" id="task-search" class="form-control mb-3" placeholder="タスクを検索">
 
             <div id="main-content" class="mt-4">
@@ -131,11 +148,18 @@
             fetch('/update_person_order', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
                 },
                 body: JSON.stringify({person_order: people})
-            }).then(response => response.json())
-            .then(data => console.log(data));  // デバッグ用
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to update person order');
+                }
+                return response.json();
+            })
+            .then(data => console.log(data))
+            .catch(error => alert('担当者の順序更新に失敗しました: ' + error.message));
         }
     });
 </script>
