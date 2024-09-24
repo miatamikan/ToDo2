@@ -71,8 +71,8 @@ def login():
         expected_password = str(PASSWORD)
 
         # デバッグ用プリント（必要に応じてコメントアウト）
-        # print(f"入力されたID: {input_user_id}, パスワード: {input_password}")
-        # print(f"設定ファイルのID: {expected_user_id}, パスワード: {expected_password}")
+         print(f"入力されたID: {input_user_id}, パスワード: {input_password}")
+         print(f"設定ファイルのID: {expected_user_id}, パスワード: {expected_password}")
 
         # IDとパスワードの照合
         if input_user_id == expected_user_id and input_password == expected_password:
