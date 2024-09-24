@@ -11,7 +11,7 @@
                 <br><strong>担当者:</strong> 未割り当て
                 {% endif %}
                 <form method="POST" action="/delete/{{ task.id }}" style="display:inline;">
-                    {{ csrf_token() }}
+                    
                     <button type="submit" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</button>
                 </form>
                 <a href="/edit/{{ task.id }}" class="btn btn-sm btn-info float-right">編集</a>
@@ -31,7 +31,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token() }}'
+                    
                 },
                 body: JSON.stringify({task_order: tasks})
             }).then(response => {
