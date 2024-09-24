@@ -1,11 +1,19 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
+import os
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-# データベースの設定
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
+# 永続ディスクのマウントポイント
+PERSISTENT_DIR = '/persistent'
+
+# 永続ディスクディレクトリが存在しない場合は作成
+if not os.path.exists(PERSISTENT_DIR):
+    os.makedirs(PERSISTENT_DIR)
+
+# データベースの設定（永続ディスクにSQLiteを保存）
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{PERSISTENT_DIR}/todo.db'
 db = SQLAlchemy(app)
 
 # モデルの定義
