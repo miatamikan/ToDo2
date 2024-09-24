@@ -11,7 +11,7 @@
     <h1>タスクを編集</h1>
     <a href="/" class="btn btn-secondary mb-3">トップページに戻る</a>
     <form method="POST">
-        {{ csrf_token() }}
+        
         <div class="form-group">
             <label for="content">タスクの内容</label>
             <textarea id="content" name="content" class="form-control" rows="4" required>{{ task.content }}</textarea>
