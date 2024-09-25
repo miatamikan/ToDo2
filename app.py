@@ -16,22 +16,6 @@ app.secret_key = config['DEFAULT'].get('SECRET_KEY', 'your_secret_key')
 
 # 永続ディスクのマウントポイント
 PERSISTENT_DIR = '/persistent'
-file_path = os.path.join(PERSISTENT_DIR, 'todo.db')
-
-# dbダウンロード
-@app.route('/download')
-def download_file():
-    # ファイルの存在を確認
-    if not os.path.exists(file_path):
-        app.logger.error(f"File not found at path: {file_path}")
-        return abort(404, description="File not found")
-
-    try:
-        # ファイルを送信
-        return send_file(file_path, as_attachment=True)
-    except Exception as e:
-        app.logger.error(f"Error sending file: {e}")
-        return abort(500, description="Internal Server Error")
 
 # 永続ディスクディレクトリが存在しない場合は作成
 if not os.path.exists(PERSISTENT_DIR):
