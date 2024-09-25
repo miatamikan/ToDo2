@@ -4,7 +4,7 @@ import os
 import configparser
 
 app = Flask(__name__)
-
+    
 # config.ini から設定を読み込む
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -54,7 +54,13 @@ def create_initial_data():
 with app.app_context():
     db.create_all()
     create_initial_data()
-
+    
+# dbダウンロード
+@app.route('/download')
+def download_file():
+    file_path = '/persistent/.todo.db'  # 永続ディスクのファイルパス
+    return send_file(file_path, as_attachment=True)
+    
 # ログインページ
 @app.route('/login', methods=['GET', 'POST'])
 def login():
