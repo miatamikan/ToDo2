@@ -58,7 +58,7 @@ with app.app_context():
 # dbダウンロード
 @app.route('/download')
 def download_file():
-    file_path = '/persistent/.todo.db'  # 永続ディスクのファイルパス
+    file_path = '/persistent/todo.db'  # 永続ディスクのファイルパス
     return send_file(file_path, as_attachment=True)
     
 # ログインページ
