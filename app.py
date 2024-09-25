@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, f
 from flask_sqlalchemy import SQLAlchemy
 import os
 import configparser
+import random
+import string
 
 app = Flask(__name__)
 
@@ -41,6 +43,8 @@ class Task(db.Model):
     content = db.Column(db.Text, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
     person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=True)
+    # 新たにhash_idを追加し、一意のIDを生成する
+    hash_id = db.Column(db.String(10), nullable=False, unique=True, default=lambda: ''.join(random.choices(string.ascii_lowercase + string.digits, k=10)))
 
 # 初期データの作成
 def create_initial_data():
@@ -62,19 +66,12 @@ def login():
         input_user_id = request.form['user_id']
         input_password = request.form['password']
 
-        # 入力されたIDとパスワードを文字列として扱う
         input_user_id = str(input_user_id)
         input_password = str(input_password)
 
-        # 設定ファイルからのIDとパスワードを文字列として取得
         expected_user_id = str(USER_ID)
         expected_password = str(PASSWORD)
 
-        # デバッグ用プリント（必要に応じてコメントアウト）
-        print(f"入力されたID: {input_user_id}, パスワード: {input_password}")
-        print(f"設定ファイルのID: {expected_user_id}, パスワード: {expected_password}")
-
-        # IDとパスワードの照合
         if input_user_id == expected_user_id and input_password == expected_password:
             session['logged_in'] = True
             flash('ログインに成功しました！')
@@ -83,7 +80,6 @@ def login():
             flash('IDまたはパスワードが間違っています')
             return redirect(url_for('login'))
     return render_template('login.html')
-
 
 # ログアウト
 @app.route('/logout')
@@ -131,61 +127,6 @@ def update_task_order():
     db.session.commit()
     return jsonify({'status': 'success'})
 
-# 担当者の順序更新
-@app.route('/update_person_order', methods=['POST'])
-def update_person_order():
-    if not session.get('logged_in'):
-        return jsonify({'status': 'failed', 'message': 'Unauthorized'}), 401
-    data = request.get_json()
-    person_order = data.get('person_order', [])
-    for index, person_id in enumerate(person_order):
-        person = Person.query.get(person_id)
-        if person:
-            person.order = index
-    db.session.commit()
-    return jsonify({'status': 'success'})
-
-# 担当者の追加・編集・削除
-@app.route('/edit_person', methods=['GET', 'POST'])
-def edit_person():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    people = Person.query.order_by(Person.order).all()
-    if request.method == 'POST':
-        action = request.form.get('action')
-        if action == 'add':
-            name = request.form['name']
-            existing_person = Person.query.filter_by(name=name).first()
-            if existing_person:
-                flash('同じ名前の担当者がすでに存在します')
-            else:
-                max_order = db.session.query(db.func.max(Person.order)).scalar() or 0
-                new_person = Person(name=name, order=max_order + 1)
-                db.session.add(new_person)
-                db.session.commit()
-                flash('担当者が追加されました')
-        elif action == 'edit':
-            person_id = request.form['person_id']
-            new_name = request.form['new_name']
-            person = Person.query.get(person_id)
-            if person:
-                person.name = new_name
-                db.session.commit()
-                flash('担当者名が更新されました')
-            else:
-                flash('担当者が見つかりません')
-        elif action == 'delete':
-            person_id = request.form['person_id']
-            person = Person.query.get(person_id)
-            if person:
-                db.session.delete(person)
-                db.session.commit()
-                flash('担当者が削除されました')
-            else:
-                flash('担当者が見つかりません')
-        return redirect(url_for('edit_person'))
-    return render_template('edit_person.html', people=people)
-
 # タスクの追加
 @app.route('/add', methods=['GET', 'POST'])
 def add_task():
@@ -205,31 +146,6 @@ def add_task():
         db.session.commit()
         return redirect(url_for('index'))
     return render_template('add_task.html', people=people)
-
-# タスクの編集
-@app.route('/edit/<int:id>', methods=['GET', 'POST'])
-def edit_task(id):
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    task = Task.query.get_or_404(id)
-    people = Person.query.order_by(Person.order).all()
-    if request.method == 'POST':
-        task.content = request.form['content']
-        task.person_id = request.form.get('person_id')
-        db.session.commit()
-        return redirect(url_for('index'))
-    return render_template('edit_task.html', task=task, people=people)
-
-# タスクの削除
-@app.route('/delete/<int:id>', methods=['POST'])
-def delete_task(id):
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    task = Task.query.get_or_404(id)
-    db.session.delete(task)
-    db.session.commit()
-    flash('タスクが削除されました')
-    return redirect(url_for('index'))
 
 # robots.txtの設定（検索エンジンによるインデックスを防止）
 @app.route('/robots.txt')
