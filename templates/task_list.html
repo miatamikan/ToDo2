@@ -3,7 +3,7 @@
         <h4 id="task-title" class="card-title">{{ person_name if person_name else "タスク一覧" }}</h4>  <!-- タイトルに担当者名を表示 -->
         <ul id="task-list" class="list-group mt-3">
             {% for task in tasks %}
-            <li id="{{ task.hash_id }}" class="list-group-item" data-task-id="{{ task.id }}">
+            <li class="list-group-item" data-task-id="{{ task.id }}">
                 {{ task.content | safe }}
                 {% if task.person %}
                 <br><strong>担当者:</strong> {{ task.person.name }}
@@ -11,17 +11,13 @@
                 <br><strong>担当者:</strong> 未割り当て
                 {% endif %}
                 <form method="POST" action="/delete/{{ task.id }}" style="display:inline;">
+                    
                     <button type="submit" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</button>
                 </form>
                 <a href="/edit/{{ task.id }}" class="btn btn-sm btn-info float-right">編集</a>
             </li>
             {% endfor %}
         </ul>
-
-        <!-- タスクがない場合のメッセージ -->
-        {% if not tasks %}
-        <p>タスクがありません。</p>
-        {% endif %}
     </div>
 </div>
 
@@ -35,6 +31,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    
                 },
                 body: JSON.stringify({task_order: tasks})
             }).then(response => {
