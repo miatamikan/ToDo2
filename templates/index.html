@@ -4,22 +4,84 @@
     <meta charset="UTF-8">
     <title>ToDoリスト</title>
     <meta name="robots" content="noindex">
+    <!-- BootstrapとjQuery -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Sortable.js -->
     <script src="{{ url_for('static', filename='js/Sortable.min.js') }}"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+    <style>
+        /* サイドバーとメインコンテンツの幅調整 */
+        .sidebar {
+            height: 100vh;
+            border-right: 1px solid #ddd;
+            width: 20%;
+            position: sticky;
+            top: 0;
+            float: left;
+        }
+        .main-content {
+            width: 80%;
+            float: left;
+            padding-top: 20px;
+        }
+        .sidebar-bottom-link {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+        }
+        /* タスク行の交互色付け */
+        .list-group-item:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+        .list-group-item:nth-child(even) {
+            background-color: #f1f1f1;
+        }
+        /* フローティングアクションボタン */
+        .floating-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            text-align: center;
+            font-size: 24px;
+            line-height: 60px;
+            background-color: #007bff;
+            color: white;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        /* フォントスタイル */
+        .navbar-brand {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 2em;
+            font-weight: bold;
+            background: linear-gradient(45deg, #f4d03f, #e67e22);
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+    </style>
 </head>
 <body>
 <div class="container-fluid">
+    <!-- ヘッダー -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="#">ToDo2</a>
-        <ul class="navbar-nav ml-auto">
-            <li class="nav-item">
-                <a class="nav-link" href="/logout">ログアウト</a>
-            </li>
-        </ul>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">ログアウト</a>
+                </li>
+            </ul>
+        </div>
     </nav>
 
+    <!-- コンテンツ -->
     <div class="row">
+        <!-- サイドバー -->
         <div class="sidebar bg-light">
             <h3 class="mt-4">メンバー</h3>
             <ul id="person-list" class="list-group">
@@ -32,28 +94,63 @@
                 </li>
                 {% endfor %}
             </ul>
+            <div class="sidebar-bottom-link">
+                <a href="/edit_person" class="btn btn-secondary">担当者の編集</a>
+            </div>
         </div>
 
+        <!-- メインコンテンツ -->
         <div class="main-content">
+            <!-- 検索窓 -->
+            <label for="task-search" class="sr-only">タスクを検索</label>
+            <input type="text" id="task-search" class="form-control mb-3" placeholder="タスクを検索">
+
             <div id="main-content" class="mt-4">
+                <!-- デフォルトの全タスク一覧をここにロードします -->
                 <script>
                     $(document).ready(function() {
-                        loadContent('/all_tasks');
+                        loadContent('/all_tasks');  // 初期表示で全タスクを表示
                     });
                 </script>
             </div>
-            <a href="/add" class="btn btn-primary mt-2">新規登録</a>
+            <!-- タスク追加ボタン -->
+            <div class="mt-2">
+                <a href="/add" class="btn btn-primary">新規登録</a>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- フローティングアクションボタン -->
+<a href="/add" class="floating-button">+</a>
+
+<!-- 担当者リストとコンテンツをロードするためのJavaScript -->
 <script>
+    // コンテンツをロードする関数（担当者名もタイトルに表示）
     function loadContent(url) {
         $.get(url, function(data) {
             $("#main-content").html(data);
+
+            // タイトルを更新する（サーバーから動的に渡されたタイトルを表示）
+            let newTitle = $("#task-title").text();
+            document.title = newTitle;
         });
     }
 
+    // 検索機能
+    document.getElementById('task-search').addEventListener('input', function() {
+        let filter = this.value.toLowerCase();
+        let tasks = document.querySelectorAll('#task-list li');
+        tasks.forEach(task => {
+            if (task.textContent.toLowerCase().includes(filter)) {
+                task.style.display = '';
+            } else {
+                task.style.display = 'none';
+            }
+        });
+    });
+
+    // サイドバーの担当者リストをソート可能に
     var personList = document.getElementById('person-list');
     new Sortable(personList, {
         animation: 150,
@@ -63,9 +160,17 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    
                 },
                 body: JSON.stringify({person_order: people})
-            });
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to update person order');
+                }
+                return response.json();
+            })
+            .then(data => console.log(data))
+            .catch(error => alert('担当者の順序更新に失敗しました: ' + error.message));
         }
     });
 </script>
