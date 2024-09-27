@@ -2,16 +2,17 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, f
 from flask_sqlalchemy import SQLAlchemy
 import os
 import configparser
+import time  # 追加
 
 app = Flask(__name__)
-    
+
 # config.ini から設定を読み込む
 config = configparser.ConfigParser()
 config.read('config.ini')
 
 # IDとパスワード、シークレットキーを設定ファイルから取得
-USER_ID = config['DEFAULT'].get('USER_ID', 'admin')  # デフォルトIDは
-PASSWORD = config['DEFAULT'].get('PASSWORD', '1111')  # デフォルトパスワードは
+USER_ID = config['DEFAULT'].get('USER_ID', 'admin')
+PASSWORD = config['DEFAULT'].get('PASSWORD', '1111')
 app.secret_key = config['DEFAULT'].get('SECRET_KEY', 'your_secret_key')
 
 # 永続ディスクのマウントポイント
@@ -54,38 +55,50 @@ def create_initial_data():
 with app.app_context():
     db.create_all()
     create_initial_data()
-    
 
-    
+# ログイン試行回数とタイムスタンプを保存する辞書
+login_attempts = {}
+
 # ログインページ
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         input_user_id = request.form['user_id']
         input_password = request.form['password']
+        current_time = time.time()
 
-        # 入力されたIDとパスワードを文字列として扱う
-        input_user_id = str(input_user_id)
-        input_password = str(input_password)
+        # 試行回数と最初の試行時間の初期化
+        if input_user_id not in login_attempts:
+            login_attempts[input_user_id] = {'count': 0, 'first_attempt_time': current_time}
+
+        # 試行回数が3回を超えた場合のチェック
+        attempts_info = login_attempts[input_user_id]
+        if attempts_info['count'] >= 3:
+            time_diff = current_time - attempts_info['first_attempt_time']
+            if time_diff < 3600:  # 1時間未満ならログイン不可
+                flash('ログイン試行回数が制限を超えました。1時間後に再度お試しください。')
+                return redirect(url_for('login'))
+            else:
+                # 1時間経過していたら試行回数リセット
+                login_attempts[input_user_id] = {'count': 0, 'first_attempt_time': current_time}
 
         # 設定ファイルからのIDとパスワードを文字列として取得
         expected_user_id = str(USER_ID)
         expected_password = str(PASSWORD)
 
-        # デバッグ用プリント（必要に応じてコメントアウト）
-        #print(f"入力されたID: {input_user_id}, パスワード: {input_password}")
-        #print(f"設定ファイルのID: {expected_user_id}, パスワード: {expected_password}")
-
         # IDとパスワードの照合
         if input_user_id == expected_user_id and input_password == expected_password:
             session['logged_in'] = True
             flash('ログインに成功しました！')
+            login_attempts[input_user_id] = {'count': 0, 'first_attempt_time': current_time}  # 成功したらリセット
             return redirect(url_for('index'))
         else:
+            # ログイン失敗時のカウント更新
+            login_attempts[input_user_id]['count'] += 1
             flash('IDまたはパスワードが間違っています')
             return redirect(url_for('login'))
-    return render_template('login.html')
 
+    return render_template('login.html')
 
 # ログアウト
 @app.route('/logout')
