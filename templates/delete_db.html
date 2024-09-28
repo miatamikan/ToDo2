@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>データベースの削除</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>データベースの削除</h1>
+        <p>本当にデータベースを削除しますか？この操作は取り消せません。</p>
+        <form action="/delete_db" method="POST">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('本当にデータベースを削除しますか？この操作は取り消せません。')">データベースを削除</button>
+        </form>
+    </div>
+</body>
+</html>
