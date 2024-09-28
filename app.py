@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, f
 from flask_sqlalchemy import SQLAlchemy
 import os
 import configparser
-import time  # 追加
+import time
 
 app = Flask(__name__)
 
@@ -41,6 +41,7 @@ class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
+    deadline = db.Column(db.Date, nullable=True)  # 期限フィールドを追加
     person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=True)
 
 # 初期データの作成
@@ -210,12 +211,10 @@ def add_task():
     if request.method == 'POST':
         content = request.form['content']
         person_id = request.form.get('person_id')
-        min_priority = db.session.query(db.func.min(Task.priority)).scalar()
-        if min_priority is None:
-            min_priority = 0
-        else:
-            min_priority -= 1
-        new_task = Task(content=content, person_id=person_id, priority=min_priority)
+        deadline = request.form.get('deadline') or None  # 期限が選択されていない場合はNoneにする
+        min_priority = db.session.query(db.func.min(Task.priority)).scalar() or 0
+        min_priority -= 1
+        new_task = Task(content=content, person_id=person_id, priority=min_priority, deadline=deadline)
         db.session.add(new_task)
         db.session.commit()
         return redirect(url_for('index'))
@@ -230,7 +229,7 @@ def edit_task(id):
     people = Person.query.order_by(Person.order).all()
     if request.method == 'POST':
         task.content = request.form['content']
-        task.person_id = request.form.get('person_id')
+        task.deadline = request.form.get('deadline') or None  # 期限を更新
         db.session.commit()
         return redirect(url_for('index'))
     return render_template('edit_task.html', task=task, people=people)
