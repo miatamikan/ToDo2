@@ -5,14 +5,14 @@ import configparser
 import time
 from flask import send_from_directory
 
+app = Flask(__name__)  # アプリケーションインスタンスの作成を先に行う
+
 # データベースファイルをダウンロードするためのエンドポイント
 @app.route('/download_db')
 def download_db():
     # データベースファイルのパス
     db_path = '/persistent'  # データベースファイルが格納されているディレクトリ
     return send_from_directory(db_path, 'todo.db', as_attachment=True)
-
-app = Flask(__name__)
 
 # config.ini から設定を読み込む
 config = configparser.ConfigParser()
@@ -22,6 +22,7 @@ config.read('config.ini')
 USER_ID = config['DEFAULT'].get('USER_ID', 'admin')
 PASSWORD = config['DEFAULT'].get('PASSWORD', '1111')
 app.secret_key = config['DEFAULT'].get('SECRET_KEY', 'your_secret_key')
+
 
 # 永続ディスクのマウントポイント
 PERSISTENT_DIR = '/persistent'
