@@ -5,12 +5,11 @@ import configparser
 import time
 from flask import send_from_directory
 
-app = Flask(__name__)  # アプリケーションインスタンスの作成を先に行う
+app = Flask(__name__)
 
 # データベースファイルをダウンロードするためのエンドポイント
 @app.route('/download_db')
 def download_db():
-    # データベースファイルのパス
     db_path = '/persistent'  # データベースファイルが格納されているディレクトリ
     return send_from_directory(db_path, 'todo.db', as_attachment=True)
 
@@ -25,7 +24,7 @@ def upload_db():
             return "No selected file", 400
         if file:
             file_path = '/persistent/todo.db'
-            file.save(file_path)  # 既存のデータベースを上書き
+            file.save(file_path)
             return "Database uploaded and replaced successfully!", 200
     return '''
     <form method="POST" enctype="multipart/form-data">
@@ -33,7 +32,6 @@ def upload_db():
         <input type="submit" value="Upload">
     </form>
     '''
-
 
 # config.ini から設定を読み込む
 config = configparser.ConfigParser()
@@ -43,7 +41,6 @@ config.read('config.ini')
 USER_ID = config['DEFAULT'].get('USER_ID', 'admin')
 PASSWORD = config['DEFAULT'].get('PASSWORD', '1111')
 app.secret_key = config['DEFAULT'].get('SECRET_KEY', 'your_secret_key')
-
 
 # 永続ディスクのマウントポイント
 PERSISTENT_DIR = '/persistent'
@@ -106,25 +103,19 @@ def login():
         attempts_info = login_attempts[input_user_id]
         if attempts_info['count'] >= 3:
             time_diff = current_time - attempts_info['first_attempt_time']
-            if time_diff < 3600:  # 1時間未満ならログイン不可
+            if time_diff < 3600:
                 flash('ログイン試行回数が制限を超えました。1時間後に再度お試しください。')
                 return redirect(url_for('login'))
             else:
-                # 1時間経過していたら試行回数リセット
                 login_attempts[input_user_id] = {'count': 0, 'first_attempt_time': current_time}
 
-        # 設定ファイルからのIDとパスワードを文字列として取得
-        expected_user_id = str(USER_ID)
-        expected_password = str(PASSWORD)
-
         # IDとパスワードの照合
-        if input_user_id == expected_user_id and input_password == expected_password:
+        if input_user_id == USER_ID and input_password == PASSWORD:
             session['logged_in'] = True
             flash('ログインに成功しました！')
-            login_attempts[input_user_id] = {'count': 0, 'first_attempt_time': current_time}  # 成功したらリセット
+            login_attempts[input_user_id] = {'count': 0, 'first_attempt_time': current_time}
             return redirect(url_for('index'))
         else:
-            # ログイン失敗時のカウント更新
             login_attempts[input_user_id]['count'] += 1
             flash('IDまたはパスワードが間違っています')
             return redirect(url_for('login'))
@@ -241,7 +232,7 @@ def add_task():
     if request.method == 'POST':
         content = request.form['content']
         person_id = request.form.get('person_id')
-        deadline = request.form.get('deadline') or None  # 期限が選択されていない場合はNoneにする
+        deadline = request.form.get('deadline') or None
         min_priority = db.session.query(db.func.min(Task.priority)).scalar() or 0
         min_priority -= 1
         new_task = Task(content=content, person_id=person_id, priority=min_priority, deadline=deadline)
@@ -259,7 +250,7 @@ def edit_task(id):
     people = Person.query.order_by(Person.order).all()
     if request.method == 'POST':
         task.content = request.form['content']
-        task.deadline = request.form.get('deadline') or None  # 期限を更新
+        task.deadline = request.form.get('deadline') or None
         db.session.commit()
         return redirect(url_for('index'))
     return render_template('edit_task.html', task=task, people=people)
