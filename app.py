@@ -14,8 +14,6 @@ def download_db():
     db_path = '/persistent'  # データベースファイルが格納されているディレクトリ
     return send_from_directory(db_path, 'todo.db', as_attachment=True)
 
-
-
 # データベースファイルをアップロードして適用するためのエンドポイント
 @app.route('/upload_db', methods=['GET', 'POST'])
 def upload_db():
@@ -30,6 +28,11 @@ def upload_db():
             file.save(file_path)  # 既存のデータベースを上書き
             return "Database uploaded and replaced successfully!", 200
     return '''
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="db_file">
+        <input type="submit" value="Upload">
+    </form>
+    '''
 
 
 # config.ini から設定を読み込む
