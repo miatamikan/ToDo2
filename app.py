@@ -81,8 +81,8 @@ def db_edit():
                 result_proxy = connection.execute(text(sql_query))
                 
                 if result_proxy.returns_rows:
-                    # 結果をリスト形式で表示
-                    result = [list(row) for row in result_proxy]
+                    # 結果をシンプルに表示
+                    result = [row[0] for row in result_proxy]
                 else:
                     result = "Query executed successfully."
         except Exception as e:
