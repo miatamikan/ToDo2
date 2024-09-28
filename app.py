@@ -77,16 +77,17 @@ def db_edit():
         try:
             # SQLクエリを実行する
             with db.engine.connect() as connection:
-                result_proxy = connection.execute(sql_query)
+                result_proxy = connection.execute(text(sql_query))
                 if result_proxy.returns_rows:
                     # 結果を取得して表示用に変換
                     result = [dict(row) for row in result_proxy]
                 else:
                     result = "Query executed successfully."
         except Exception as e:
-            error = str(e)
+            error = f"Error: {e}"
     
     return render_template('db_edit.html', result=result, error=error)
+
 
 
 
