@@ -5,6 +5,7 @@ import configparser
 import time
 from datetime import datetime  # 日付変換に必要
 from flask import send_from_directory
+from sqlalchemy import text
 
 app = Flask(__name__)
 
