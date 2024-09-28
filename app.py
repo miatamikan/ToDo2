@@ -67,7 +67,6 @@ def delete_db():
 def delete_db_page():
     return render_template('delete_db.html')
 
-# SQLを実行するためのエンドポイント
 @app.route('/db_edit', methods=['GET', 'POST'])
 @login_required  # ログインが必要なエンドポイント
 def db_edit():
@@ -80,15 +79,17 @@ def db_edit():
             with db.engine.connect() as connection:
                 # text関数を使用してSQLクエリを実行
                 result_proxy = connection.execute(text(sql_query))
+                
                 if result_proxy.returns_rows:
-                    # 結果を取得して表示用に変換
-                    result = [dict(row) for row in result_proxy]
+                    # 結果をリスト形式で表示
+                    result = [list(row) for row in result_proxy]
                 else:
                     result = "Query executed successfully."
         except Exception as e:
             error = f"Error: {e}"
     
     return render_template('db_edit.html', result=result, error=error)
+
 
 
 
