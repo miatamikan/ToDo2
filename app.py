@@ -2,69 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, f
 from flask_sqlalchemy import SQLAlchemy
 import os
 import configparser
-import time
-from datetime import datetime  # 日付変換に必要
-from flask import send_from_directory
+import time  # 追加
 
 app = Flask(__name__)
-
-# ログインが必要なデコレータを作成
-def login_required(func):
-    def wrapper(*args, **kwargs):
-        if not session.get('logged_in'):
-            flash('ログインが必要です')
-            return redirect(url_for('login'))
-        return func(*args, **kwargs)
-    wrapper.__name__ = func.__name__
-    return wrapper
-
-# データベースファイルをダウンロードするためのエンドポイント
-@app.route('/download_db')
-@login_required  # ログインが必要なエンドポイント
-def download_db():
-    db_path = '/persistent'  # データベースファイルが格納されているディレクトリ
-    return send_from_directory(db_path, 'todo.db', as_attachment=True)
-
-# データベースファイルをアップロードして適用するためのエンドポイント
-@app.route('/upload_db', methods=['GET', 'POST'])
-@login_required  # ログインが必要なエンドポイント
-def upload_db():
-    if request.method == 'POST':
-        if 'db_file' not in request.files:
-            return "No file part", 400
-        file = request.files['db_file']
-        if file.filename == '':
-            return "No selected file", 400
-        if file:
-            file_path = '/persistent/todo.db'
-            file.save(file_path)
-            return "Database uploaded and replaced successfully!", 200
-    return '''
-    <form method="POST" enctype="multipart/form-data">
-        <input type="file" name="db_file">
-        <input type="submit" value="Upload">
-    </form>
-    '''
-
-# データベースファイルを削除するためのエンドポイント
-@app.route('/delete_db', methods=['POST'])
-@login_required  # ログインが必要なエンドポイント
-def delete_db():
-    db_path = '/persistent/todo.db'
-    try:
-        if os.path.exists(db_path):
-            os.remove(db_path)  # データベースファイルを削除
-            return "Database deleted successfully!", 200
-        else:
-            return "Database file not found.", 404
-    except Exception as e:
-        return f"An error occurred while deleting the database: {e}", 500
-
-# データベース削除ページの表示
-@app.route('/delete_db_page')
-@login_required  # ログインが必要なエンドポイント
-def delete_db_page():
-    return render_template('delete_db.html')
 
 # config.ini から設定を読み込む
 config = configparser.ConfigParser()
@@ -101,7 +41,6 @@ class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
-    deadline = db.Column(db.Date, nullable=True)  # 期限フィールドを追加
     person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=True)
 
 # 初期データの作成
@@ -136,19 +75,25 @@ def login():
         attempts_info = login_attempts[input_user_id]
         if attempts_info['count'] >= 3:
             time_diff = current_time - attempts_info['first_attempt_time']
-            if time_diff < 3600:
+            if time_diff < 3600:  # 1時間未満ならログイン不可
                 flash('ログイン試行回数が制限を超えました。1時間後に再度お試しください。')
                 return redirect(url_for('login'))
             else:
+                # 1時間経過していたら試行回数リセット
                 login_attempts[input_user_id] = {'count': 0, 'first_attempt_time': current_time}
 
+        # 設定ファイルからのIDとパスワードを文字列として取得
+        expected_user_id = str(USER_ID)
+        expected_password = str(PASSWORD)
+
         # IDとパスワードの照合
-        if input_user_id == USER_ID and input_password == PASSWORD:
+        if input_user_id == expected_user_id and input_password == expected_password:
             session['logged_in'] = True
             flash('ログインに成功しました！')
-            login_attempts[input_user_id] = {'count': 0, 'first_attempt_time': current_time}
+            login_attempts[input_user_id] = {'count': 0, 'first_attempt_time': current_time}  # 成功したらリセット
             return redirect(url_for('index'))
         else:
+            # ログイン失敗時のカウント更新
             login_attempts[input_user_id]['count'] += 1
             flash('IDまたはパスワードが間違っています')
             return redirect(url_for('login'))
@@ -265,20 +210,12 @@ def add_task():
     if request.method == 'POST':
         content = request.form['content']
         person_id = request.form.get('person_id')
-        deadline_str = request.form.get('deadline')  # フォームからの期限
-        deadline = None
-
-        # 期限が指定されている場合、文字列を日付オブジェクトに変換
-        if deadline_str:
-            try:
-                deadline = datetime.strptime(deadline_str, '%Y-%m-%d').date()
-            except ValueError:
-                flash('正しい日付を入力してください')
-                return redirect(url_for('add_task'))
-
-        min_priority = db.session.query(db.func.min(Task.priority)).scalar() or 0
-        min_priority -= 1
-        new_task = Task(content=content, person_id=person_id, priority=min_priority, deadline=deadline)
+        min_priority = db.session.query(db.func.min(Task.priority)).scalar()
+        if min_priority is None:
+            min_priority = 0
+        else:
+            min_priority -= 1
+        new_task = Task(content=content, person_id=person_id, priority=min_priority)
         db.session.add(new_task)
         db.session.commit()
         return redirect(url_for('index'))
@@ -293,17 +230,7 @@ def edit_task(id):
     people = Person.query.order_by(Person.order).all()
     if request.method == 'POST':
         task.content = request.form['content']
-        deadline_str = request.form.get('deadline')
-        task.deadline = None
-
-        # 期限が指定されている場合、文字列を日付オブジェクトに変換
-        if deadline_str:
-            try:
-                task.deadline = datetime.strptime(deadline_str, '%Y-%m-%d').date()
-            except ValueError:
-                flash('正しい日付を入力してください')
-                return redirect(url_for('edit_task', id=id))
-
+        task.person_id = request.form.get('person_id')
         db.session.commit()
         return redirect(url_for('index'))
     return render_template('edit_task.html', task=task, people=people)
