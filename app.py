@@ -3,9 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 import configparser
 import time
+from datetime import datetime  # 日付変換に必要
 from flask import send_from_directory
 
 app = Flask(__name__)
+
 # ログインが必要なデコレータを作成
 def login_required(func):
     def wrapper(*args, **kwargs):
@@ -63,7 +65,6 @@ def delete_db():
 @login_required  # ログインが必要なエンドポイント
 def delete_db_page():
     return render_template('delete_db.html')
-
 
 # config.ini から設定を読み込む
 config = configparser.ConfigParser()
@@ -264,7 +265,17 @@ def add_task():
     if request.method == 'POST':
         content = request.form['content']
         person_id = request.form.get('person_id')
-        deadline = request.form.get('deadline') or None
+        deadline_str = request.form.get('deadline')  # フォームからの期限
+        deadline = None
+
+        # 期限が指定されている場合、文字列を日付オブジェクトに変換
+        if deadline_str:
+            try:
+                deadline = datetime.strptime(deadline_str, '%Y-%m-%d').date()
+            except ValueError:
+                flash('正しい日付を入力してください')
+                return redirect(url_for('add_task'))
+
         min_priority = db.session.query(db.func.min(Task.priority)).scalar() or 0
         min_priority -= 1
         new_task = Task(content=content, person_id=person_id, priority=min_priority, deadline=deadline)
@@ -282,7 +293,17 @@ def edit_task(id):
     people = Person.query.order_by(Person.order).all()
     if request.method == 'POST':
         task.content = request.form['content']
-        task.deadline = request.form.get('deadline') or None
+        deadline_str = request.form.get('deadline')
+        task.deadline = None
+
+        # 期限が指定されている場合、文字列を日付オブジェクトに変換
+        if deadline_str:
+            try:
+                task.deadline = datetime.strptime(deadline_str, '%Y-%m-%d').date()
+            except ValueError:
+                flash('正しい日付を入力してください')
+                return redirect(url_for('edit_task', id=id))
+
         db.session.commit()
         return redirect(url_for('index'))
     return render_template('edit_task.html', task=task, people=people)
