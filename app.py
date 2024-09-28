@@ -81,14 +81,15 @@ def db_edit():
                 result_proxy = connection.execute(text(sql_query))
                 
                 if result_proxy.returns_rows:
-                    # 結果をシンプルに表示
-                    result = [row[0] for row in result_proxy]
+                    # 各列の結果をタプル形式に変換して、より分かりやすく表示
+                    result = [list(row) for row in result_proxy]
                 else:
                     result = "Query executed successfully."
         except Exception as e:
             error = f"Error: {e}"
     
     return render_template('db_edit.html', result=result, error=error)
+
 
 
 
