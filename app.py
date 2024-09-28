@@ -78,6 +78,7 @@ def db_edit():
         try:
             # SQLクエリを実行する
             with db.engine.connect() as connection:
+                # text関数を使用してSQLクエリを実行
                 result_proxy = connection.execute(text(sql_query))
                 if result_proxy.returns_rows:
                     # 結果を取得して表示用に変換
