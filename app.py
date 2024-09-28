@@ -6,15 +6,26 @@ import time
 from flask import send_from_directory
 
 app = Flask(__name__)
+# ログインが必要なデコレータを作成
+def login_required(func):
+    def wrapper(*args, **kwargs):
+        if not session.get('logged_in'):
+            flash('ログインが必要です')
+            return redirect(url_for('login'))
+        return func(*args, **kwargs)
+    wrapper.__name__ = func.__name__
+    return wrapper
 
 # データベースファイルをダウンロードするためのエンドポイント
 @app.route('/download_db')
+@login_required  # ログインが必要なエンドポイント
 def download_db():
     db_path = '/persistent'  # データベースファイルが格納されているディレクトリ
     return send_from_directory(db_path, 'todo.db', as_attachment=True)
 
 # データベースファイルをアップロードして適用するためのエンドポイント
 @app.route('/upload_db', methods=['GET', 'POST'])
+@login_required  # ログインが必要なエンドポイント
 def upload_db():
     if request.method == 'POST':
         if 'db_file' not in request.files:
@@ -32,6 +43,21 @@ def upload_db():
         <input type="submit" value="Upload">
     </form>
     '''
+
+# データベースファイルを削除するためのエンドポイント
+@app.route('/delete_db', methods=['POST'])
+@login_required  # ログインが必要なエンドポイント
+def delete_db():
+    db_path = '/persistent/todo.db'
+    try:
+        if os.path.exists(db_path):
+            os.remove(db_path)  # データベースファイルを削除
+            return "Database deleted successfully!", 200
+        else:
+            return "Database file not found.", 404
+    except Exception as e:
+        return f"An error occurred while deleting the database: {e}", 500
+
 
 # config.ini から設定を読み込む
 config = configparser.ConfigParser()
