@@ -3,6 +3,14 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 import configparser
 import time
+from flask import send_from_directory
+
+# データベースファイルをダウンロードするためのエンドポイント
+@app.route('/download_db')
+def download_db():
+    # データベースファイルのパス
+    db_path = '/persistent'  # データベースファイルが格納されているディレクトリ
+    return send_from_directory(db_path, 'todo.db', as_attachment=True)
 
 app = Flask(__name__)
 
