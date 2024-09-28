@@ -58,6 +58,12 @@ def delete_db():
     except Exception as e:
         return f"An error occurred while deleting the database: {e}", 500
 
+# データベース削除ページの表示
+@app.route('/delete_db_page')
+@login_required  # ログインが必要なエンドポイント
+def delete_db_page():
+    return render_template('delete_db.html')
+
 
 # config.ini から設定を読み込む
 config = configparser.ConfigParser()
