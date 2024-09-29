@@ -31,6 +31,29 @@
         <li><a href="{{ url_for('upload_db') }}">Upload Database</a></li>
         <li><a href="{{ url_for('delete_db_page') }}">Delete Database</a></li>
     </ul>
-    
+
+    <!-- 使い方メモ -->
+    <h2>使い方メモ</h2>
+
+    <h3>■表示関係</h3>
+    <ul>
+        <li>全てのタスクIDを表示する:</li>
+        <pre><code>SELECT id FROM task;</code></pre>
+        <li>IDが4のタスクの全項目を表示する:</li>
+        <pre><code>SELECT * FROM task WHERE id = 4;</code></pre>
+    </ul>
+
+    <h3>■内容の書き換え</h3>
+    <ul>
+        <li>特定のタスクの項目を更新する:</li>
+        <pre><code>UPDATE task SET column_name = 'new_value' WHERE id = 4;</code></pre>
+    </ul>
+
+    <h3>■データの削除</h3>
+    <ul>
+        <li>特定のタスクを削除する:</li>
+        <pre><code>DELETE FROM task WHERE id = 4;</code></pre>
+    </ul>
+
 </body>
 </html>
