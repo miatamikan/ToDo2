@@ -137,15 +137,22 @@
         });
     }
 
-    // 検索機能
+    // 検索機能（AND検索対応）
     document.getElementById('task-search').addEventListener('input', function() {
-        let filter = this.value.toLowerCase();
+        let filter = this.value.trim().toLowerCase();
+        let keywords = filter.split(/\s+/); // 入力を全角スペースや半角スペースで分割
+
         let tasks = document.querySelectorAll('#task-list li');
         tasks.forEach(task => {
-            if (task.textContent.toLowerCase().includes(filter)) {
-                task.style.display = '';
+            let taskText = task.textContent.toLowerCase();
+
+            // すべてのキーワードがタスクに含まれているかチェック
+            let match = keywords.every(keyword => taskText.includes(keyword));
+
+            if (match) {
+                task.style.display = '';  // 表示
             } else {
-                task.style.display = 'none';
+                task.style.display = 'none';  // 非表示
             }
         });
     });
@@ -160,7 +167,6 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    
                 },
                 body: JSON.stringify({person_order: people})
             }).then(response => {
