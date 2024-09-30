@@ -136,6 +136,7 @@ class Task(db.Model):
     content = db.Column(db.Text, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
     person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=True)
+    last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 # 初期データの作成
 def create_initial_data():
@@ -327,9 +328,11 @@ def edit_task(id):
     if request.method == 'POST':
         task.content = request.form['content']
         task.person_id = request.form.get('person_id')
+        task.last_updated = datetime.utcnow()  # Update timestamp
         db.session.commit()
         return redirect(url_for('index'))
     return render_template('edit_task.html', task=task, people=people)
+
 
 # タスクの削除（担当者を過去ログに変更）
 @app.route('/delete/<int:id>', methods=['POST'])
