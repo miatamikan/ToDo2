@@ -24,6 +24,7 @@ PyMsgBox==1.0.9
 pyperclip==1.9.0
 PyRect==0.2.0
 PyScreeze==0.1.30
+pytz==2024.2
 pytweening==1.2.0
 requests==2.32.3
 SQLAlchemy==2.0.35
