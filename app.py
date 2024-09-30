@@ -4,10 +4,14 @@ import os
 import configparser
 import time
 from datetime import datetime  # 日付変換に必要
+import pytz
 from flask import send_from_directory
 from sqlalchemy import text
 
+
 app = Flask(__name__)
+
+
 
 # ログインが必要なデコレータを作成
 def login_required(func):
@@ -97,6 +101,13 @@ def create_initial_data():
         past_log_person = Person(name='過去ログ', order=9999)  # 順番を後ろに
         db.session.add(past_log_person)
         db.session.commit()
+
+# 日本標準時に変換する関数
+def convert_to_jst(utc_time):
+    jst = pytz.timezone('Asia/Tokyo')
+    return utc_time.astimezone(jst)
+
+
 
 
 
@@ -318,7 +329,7 @@ def add_task():
         return redirect(url_for('index'))
     return render_template('add_task.html', people=people)
 
-# タスクの編集
+# タスクの編集時にJSTに変換
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_task(id):
     if not session.get('logged_in'):
@@ -328,11 +339,18 @@ def edit_task(id):
     if request.method == 'POST':
         task.content = request.form['content']
         task.person_id = request.form.get('person_id')
-        task.last_updated = datetime.utcnow()  # Update timestamp
+        task.last_updated = datetime.utcnow()  # タスク更新時にUTCの時刻を保存
         db.session.commit()
         return redirect(url_for('index'))
     return render_template('edit_task.html', task=task, people=people)
 
+# タスク一覧表示時にJSTに変換して表示
+@app.template_filter('format_datetime_jst')
+def format_datetime_jst(value):
+    if value is None:
+        return '未更新'
+    jst_time = convert_to_jst(value)
+    return jst_time.strftime('%Y年%m月%d日 %H:%M')
 
 # タスクの削除（担当者を過去ログに変更）
 @app.route('/delete/<int:id>', methods=['POST'])
