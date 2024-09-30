@@ -19,7 +19,7 @@
             {% else %}
             <br><strong>担当者:</strong> 未割り当て
             {% endif %}
-            <br><strong>最終更新日:</strong> {{ task.last_updated.strftime('%Y年%m月%d日 %H:%M') if task.last_updated else '未更新' }}  <!-- Noneの場合は「未更新」と表示 -->
+            <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}  <!-- Noneの場合も「未更新」と表示 -->
             <a href="/edit/{{ task.id }}" class="btn btn-sm btn-info float-right">編集</a>
             <a href="/delete/{{ task.id }}" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</a>
         </li>
