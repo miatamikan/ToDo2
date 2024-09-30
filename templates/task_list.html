@@ -10,8 +10,8 @@
                 {% else %}
                 <br><strong>担当者:</strong> 未割り当て
                 {% endif %}
+                <br><strong>最終更新日:</strong> {{ task.last_updated.strftime('%Y年%m月%d日 %H:%M') }}  <!-- 最終更新日を表示 -->
                 <form method="POST" action="/delete/{{ task.id }}" style="display:inline;">
-                    
                     <button type="submit" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</button>
                 </form>
                 <a href="/edit/{{ task.id }}" class="btn btn-sm btn-info float-right">編集</a>
@@ -31,7 +31,6 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    
                 },
                 body: JSON.stringify({task_order: tasks})
             }).then(response => {
