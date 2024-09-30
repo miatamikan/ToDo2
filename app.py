@@ -91,8 +91,12 @@ def db_edit():
     return render_template('db_edit.html', result=result, error=error)
 
 
-
-
+# 過去ログ担当者を定義
+def create_initial_data():
+    if not Person.query.filter_by(name='過去ログ').first():
+        past_log_person = Person(name='過去ログ', order=9999)  # 順番を後ろに
+        db.session.add(past_log_person)
+        db.session.commit()
 
 
 
@@ -126,15 +130,12 @@ class Person(db.Model):
     name = db.Column(db.String(50), nullable=False, unique=True)
     order = db.Column(db.Integer, nullable=False, default=0)
     tasks = db.relationship('Task', backref='person', lazy=True, order_by='Task.priority')
-    past_log = db.relationship('Task', backref='past_log_person', lazy=True, primaryjoin="and_(Person.id==Task.person_id, Task.is_past_log==True)")  # 過去ログ
 
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
     person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=True)
-    is_past_log = db.Column(db.Boolean, nullable=False, default=False)  # 新しいフィールド：過去ログフラグ
-
 
 # 初期データの作成
 def create_initial_data():
@@ -213,17 +214,19 @@ def index():
 def all_tasks():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-    tasks = Task.query.filter_by(is_past_log=False).order_by(Task.priority).all()  # 過去ログを除外
+    past_log_person = Person.query.filter_by(name='過去ログ').first()
+    tasks = Task.query.filter(Task.person_id != past_log_person.id).order_by(Task.priority).all()  # 過去ログを除外
     return render_template('task_list.html', tasks=tasks, person_name=None)
+
+
 # 担当者別タスクの取得
 @app.route('/person_tasks/<int:person_id>')
 def person_tasks(person_id):
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     person = Person.query.get_or_404(person_id)
-    tasks = Task.query.filter_by(person_id=person_id, is_past_log=False).order_by(Task.priority).all()  # 過去ログを除外
+    tasks = Task.query.filter_by(person_id=person_id).order_by(Task.priority).all()
     return render_template('task_list.html', tasks=tasks, person_name=person.name)
-
 
 # タスクの順序更新
 @app.route('/update_task_order', methods=['POST'])
@@ -320,46 +323,38 @@ def edit_task(id):
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     task = Task.query.get_or_404(id)
+    people = Person.query.order_by(Person.order).all()
     if request.method == 'POST':
         task.content = request.form['content']
         task.person_id = request.form.get('person_id')
         db.session.commit()
-        flash('タスクが更新されました')
         return redirect(url_for('index'))
-    return render_template('edit_task.html', task=task, people=Person.query.order_by(Person.order).all())
+    return render_template('edit_task.html', task=task, people=people)
 
-# タスクの完全削除
-@app.route('/delete_past_log/<int:id>', methods=['POST'])
-def delete_past_log(id):
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    task = Task.query.get_or_404(id)
-    if task.is_past_log:  # 本当に過去ログか確認
-        db.session.delete(task)
-        db.session.commit()
-        flash('タスクが完全に削除されました')
-    else:
-        flash('タスクが見つかりません')
-    return redirect(url_for('index'))
-
-# タスクの削除（過去ログに移動）
+# タスクの削除（担当者を過去ログに変更）
 @app.route('/delete/<int:id>', methods=['POST'])
 def delete_task(id):
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     task = Task.query.get_or_404(id)
-    task.is_past_log = True  # 過去ログに移動
-    db.session.commit()
-    flash('タスクが過去ログに移動されました')
+    past_log_person = Person.query.filter_by(name='過去ログ').first()  # 過去ログ担当者を取得
+    if task.person_id != past_log_person.id:
+        task.person_id = past_log_person.id  # 担当者を過去ログに変更
+        db.session.commit()
+        flash('タスクが過去ログに移動されました')
+    else:
+        db.session.delete(task)  # すでに過去ログなら完全削除
+        db.session.commit()
+        flash('タスクが完全に削除されました')
     return redirect(url_for('index'))
 
-@app.route('/past_log_tasks/<int:person_id>')
-def past_log_tasks(person_id):
+@app.route('/past_log_tasks')
+def past_log_tasks():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-    person = Person.query.get_or_404(person_id)
-    tasks = Task.query.filter_by(person_id=person_id, is_past_log=True).order_by(Task.priority).all()
-    return render_template('task_list.html', tasks=tasks, person_name=f"{person.name}の過去ログタスク")
+    past_log_person = Person.query.filter_by(name='過去ログ').first()
+    tasks = Task.query.filter_by(person_id=past_log_person.id).order_by(Task.priority).all()
+    return render_template('task_list.html', tasks=tasks, person_name='過去ログ')
 
 
 # robots.txtの設定（検索エンジンによるインデックスを防止）
