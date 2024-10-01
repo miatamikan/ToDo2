@@ -147,7 +147,11 @@ class Task(db.Model):
     content = db.Column(db.Text, nullable=False)
     priority = db.Column(db.Integer, nullable=False)
     person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=True)
-    last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    def update_last_updated(self):
+        self.last_updated = datetime.utcnow()
+
 
 # 初期データの作成
 def create_initial_data():
@@ -251,8 +255,9 @@ def update_task_order():
         task = Task.query.get(task_id)
         if task:
             task.priority = index
-    db.session.commit()
+    db.session.commit()  # No need to update last_updated here
     return jsonify({'status': 'success'})
+
 
 # 担当者の順序更新
 @app.route('/update_person_order', methods=['POST'])
@@ -339,10 +344,11 @@ def edit_task(id):
     if request.method == 'POST':
         task.content = request.form['content']
         task.person_id = request.form.get('person_id')
-        task.last_updated = datetime.utcnow()  # タスク更新時にUTCの時刻を保存
+        task.update_last_updated()  # Only update last_updated here
         db.session.commit()
         return redirect(url_for('index'))
     return render_template('edit_task.html', task=task, people=people)
+
 
 # タスク一覧表示時にJSTに変換して表示
 @app.template_filter('format_datetime_jst')
