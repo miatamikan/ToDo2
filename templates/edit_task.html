@@ -19,6 +19,8 @@
             <div id="editor-container" class="form-control" style="height: 300px;">
                 {{ task.content | safe }}
             </div>
+            <!-- HTMLモード用のtextarea -->
+            <textarea id="html-container" class="form-control" style="display:none; height: 300px;"></textarea>
             <input type="hidden" name="content" id="hidden-content">
         </div>
 
@@ -50,15 +52,19 @@
     let isHtmlMode = false;
     document.getElementById('toggle-html-btn').addEventListener('click', function() {
         if (isHtmlMode) {
-            let htmlContent = document.querySelector('#editor-container').innerText;
+            // HTMLからリッチテキストに戻す
+            let htmlContent = document.getElementById('html-container').value;
             quill.clipboard.dangerouslyPasteHTML(htmlContent);
+            document.getElementById('html-container').style.display = 'none';
             document.getElementById('editor-container').style.display = 'block';
             isHtmlMode = false;
             this.textContent = 'HTMLソースに切り替え';
         } else {
+            // リッチテキストからHTMLに切り替え
             let quillContent = quill.root.innerHTML;
-            document.querySelector('#editor-container').innerHTML = quillContent;
+            document.getElementById('html-container').value = quillContent;
             document.getElementById('editor-container').style.display = 'none';
+            document.getElementById('html-container').style.display = 'block';
             isHtmlMode = true;
             this.textContent = 'リッチテキストに切り替え';
         }
@@ -66,7 +72,11 @@
 
     // フォーム送信時にエディターの内容をhidden inputに反映
     document.querySelector('form').onsubmit = function() {
-        document.getElementById('hidden-content').value = quill.root.innerHTML;
+        if (isHtmlMode) {
+            document.getElementById('hidden-content').value = document.getElementById('html-container').value;
+        } else {
+            document.getElementById('hidden-content').value = quill.root.innerHTML;
+        }
     };
 </script>
 </body>
