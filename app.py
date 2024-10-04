@@ -344,10 +344,21 @@ def edit_task(id):
     if request.method == 'POST':
         task.content = request.form['content']
         task.person_id = request.form.get('person_id')
-        task.update_last_updated()  # Only update last_updated here
+        
+        # チェックボックスの値を取得し、優先度を最も高くする
+        if 'priority' in request.form:
+            min_priority = db.session.query(db.func.min(Task.priority)).scalar()
+            if min_priority is None:
+                min_priority = 0
+            else:
+                min_priority -= 1
+            task.priority = min_priority
+
+        task.update_last_updated()  # 最終更新日時の更新
         db.session.commit()
         return redirect(url_for('index'))
     return render_template('edit_task.html', task=task, people=people)
+
 
 
 # タスク一覧表示時にJSTに変換して表示
