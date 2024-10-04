@@ -5,17 +5,23 @@
     <title>タスクを編集</title>
     <meta name="robots" content="noindex">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <!-- Quillエディターのスタイル -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 </head>
 <body>
 <div class="container mt-5">
     <h1>タスクを編集</h1>
     <a href="/" class="btn btn-secondary mb-3">トップページに戻る</a>
     <form method="POST">
-        
         <div class="form-group">
             <label for="content">タスクの内容</label>
-            <textarea id="content" name="content" class="form-control" rows="20" required>{{ task.content }}</textarea>
+            <!-- Quillエディターのコンテナ -->
+            <div id="editor-container" class="form-control" style="height: 300px;">
+                {{ task.content | safe }}
+            </div>
+            <input type="hidden" name="content" id="hidden-content">
         </div>
+
         <div class="form-group">
             <label for="person_id">担当者</label>
             <select id="person_id" name="person_id" class="form-control">
@@ -25,14 +31,43 @@
                 {% endfor %}
             </select>
         </div>
-        <button type="submit" class="btn btn-primary">更新</button>
         
-        <div class="form-check">
-    <input type="checkbox" class="form-check-input" id="priority" name="priority">
-    <label class="form-check-label" for="priority">優先度を上げる</label>
-</div>
-
+        <!-- HTMLモード切り替えボタン -->
+        <button type="button" id="toggle-html-btn" class="btn btn-secondary">HTMLソースに切り替え</button>
+        
+        <button type="submit" class="btn btn-primary">更新</button>
     </form>
 </div>
+
+<!-- Quillエディターのスクリプト -->
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<script>
+    var quill = new Quill('#editor-container', {
+        theme: 'snow'
+    });
+
+    // HTMLモードとリッチテキストモードの切り替え
+    let isHtmlMode = false;
+    document.getElementById('toggle-html-btn').addEventListener('click', function() {
+        if (isHtmlMode) {
+            let htmlContent = document.querySelector('#editor-container').innerText;
+            quill.clipboard.dangerouslyPasteHTML(htmlContent);
+            document.getElementById('editor-container').style.display = 'block';
+            isHtmlMode = false;
+            this.textContent = 'HTMLソースに切り替え';
+        } else {
+            let quillContent = quill.root.innerHTML;
+            document.querySelector('#editor-container').innerHTML = quillContent;
+            document.getElementById('editor-container').style.display = 'none';
+            isHtmlMode = true;
+            this.textContent = 'リッチテキストに切り替え';
+        }
+    });
+
+    // フォーム送信時にエディターの内容をhidden inputに反映
+    document.querySelector('form').onsubmit = function() {
+        document.getElementById('hidden-content').value = quill.root.innerHTML;
+    };
+</script>
 </body>
 </html>
