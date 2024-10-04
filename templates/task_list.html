@@ -4,7 +4,7 @@
         <ul id="task-list" class="list-group mt-3">
             {% for task in tasks %}
             <li class="list-group-item task-item" data-task-id="{{ task.id }}">
-                <div class="task-content" style="max-height: 200px; overflow: hidden;">
+                <div class="task-content" style="max-height: 400px; overflow: hidden;">
                     {{ task.content | safe }}
                 </div>
                 {% if task.person %}
@@ -33,8 +33,8 @@
         var contentDiv = taskItem.querySelector('.task-content');
         var toggleButton = taskItem.querySelector('.toggle-task');
 
-        // 10行以上のタスクに対して折りたたみボタンを表示
-        if (contentDiv.scrollHeight > 200) {
+        // 20行以上のタスクに対して折りたたみボタンを表示
+        if (contentDiv.scrollHeight > 400) {
             toggleButton.style.display = 'block';  // ボタンを表示
 
             // 折りたたみ/展開処理
