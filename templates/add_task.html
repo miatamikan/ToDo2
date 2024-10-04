@@ -5,20 +5,21 @@
     <title>タスクを追加</title>
     <meta name="robots" content="noindex">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-    <!-- TinyMCEのスクリプト -->
-    <script src="https://cdn.tiny.cloud/1/x23pxmcnhhmea6ziycphdcgwzct1ehfqc10an3wzkq22y2cq/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 </head>
 <body>
 <div class="container mt-5">
     <h1>タスクを追加</h1>
     <a href="/" class="btn btn-secondary mb-3">トップページに戻る</a>
     <form method="POST">
+        
         <div class="form-group">
             <label for="content">タスクの内容</label>
-            <!-- TinyMCEエディター -->
-            <textarea id="editor" name="content"></textarea>
+            <textarea id="content" name="content" class="form-control" rows="20" required>
+<pre>
+
+</pre>
+            </textarea>
         </div>
-        
         <div class="form-group">
             <label for="person_id">担当者</label>
             <select id="person_id" name="person_id" class="form-control">
@@ -28,22 +29,10 @@
                 {% endfor %}
             </select>
         </div>
-        
         <button type="submit" class="btn btn-primary">追加</button>
     </form>
 </div>
-
-<script>
-    tinymce.init({
-        selector: '#editor',
-        plugins: 'print preview paste importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount imagetools textpattern help',
-        toolbar: 'undo redo | bold italic underline strikethrough | fontselect fontsizeselect formatselect | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | forecolor backcolor removeformat | image link media table | pagebreak charmap emoticons | fullscreen preview save print',
-        paste_data_images: true,  // 画像を貼り付け可能にする
-        height: 400,
-        menubar: false,
-        branding: false
-    });
-</script>
-
 </body>
 </html>
+
+
