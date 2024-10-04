@@ -25,8 +25,8 @@
             {% endif %}
             <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
 
-            <!-- 折りたたみボタン -->
-            <button class="btn btn-sm btn-secondary toggle-task mt-2" style="display: none;">もっと見る</button>
+            <!-- 折りたたみボタン（スタイルを青色に変更） -->
+            <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
 
             <a href="/edit/{{ task.id }}" class="btn btn-sm btn-info float-right">編集</a>
             <a href="/delete/{{ task.id }}" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</a>
@@ -39,7 +39,7 @@
     // 各タスクの高さを計測して、必要に応じて折りたたみボタンを表示
     document.querySelectorAll('.task-item').forEach(function(taskItem) {
         var contentDiv = taskItem.querySelector('.task-content');
-        var toggleButton = taskItem.querySelector('.toggle-task');
+        var toggleButton = taskItem.querySelector('.btn-toggle-task');
 
         // 20行以上のタスクに対して折りたたみボタンを表示
         if (contentDiv.scrollHeight > 400) {
@@ -47,11 +47,11 @@
 
             // 折りたたみ/展開処理
             toggleButton.addEventListener('click', function() {
-                if (contentDiv.style.maxHeight === '200px') {
+                if (contentDiv.style.maxHeight === '400px') {
                     contentDiv.style.maxHeight = 'none';
                     toggleButton.textContent = '折りたたむ';
                 } else {
-                    contentDiv.style.maxHeight = '200px';
+                    contentDiv.style.maxHeight = '400px';
                     toggleButton.textContent = 'もっと見る';
                 }
             });
@@ -74,5 +74,18 @@
         }
     });
 </script>
+
+<!-- カスタムスタイルを追加 -->
+<style>
+    .btn-toggle-task {
+        background-color: #007bff; /* 青色に設定 */
+        color: white;
+    }
+
+    .btn-toggle-task:hover {
+        background-color: #0056b3; /* ホバー時に少し濃い青色に変更 */
+        color: white;
+    }
+</style>
 </body>
 </html>
