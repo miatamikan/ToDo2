@@ -1,9 +1,12 @@
 <div class="card mt-3">
     <div class="card-body">
         <h4 id="task-title" class="card-title">{{ person_name if person_name else "タスク一覧" }}</h4>  <!-- タイトルに担当者名を表示 -->
+        <!-- 折りたたみボタンを追加 -->
+        <button id="toggle-tasks" class="btn btn-secondary mb-3">タスクを折りたたむ</button>
+        
         <ul id="task-list" class="list-group mt-3">
             {% for task in tasks %}
-            <li class="list-group-item" data-task-id="{{ task.id }}">
+            <li class="list-group-item task-item" data-task-id="{{ task.id }}" style="display: block;">
                 {{ task.content | safe }}
                 {% if task.person %}
                 <br><strong>担当者:</strong> {{ task.person.name }}
@@ -22,6 +25,23 @@
 </div>
 
 <script>
+    // 折りたたみボタンの動作
+    document.getElementById('toggle-tasks').addEventListener('click', function() {
+        // 全タスクを取得
+        var tasks = document.querySelectorAll('.task-item');
+        var button = this;
+        
+        tasks.forEach(function(task) {
+            if (task.style.display === 'none') {
+                task.style.display = 'block'; // タスクを表示
+                button.textContent = 'タスクを折りたたむ'; // ボタンのテキストを変更
+            } else {
+                task.style.display = 'none'; // タスクを非表示
+                button.textContent = 'タスクを表示する'; // ボタンのテキストを変更
+            }
+        });
+    });
+
     var taskList = document.getElementById('task-list');
     new Sortable(taskList, {
         animation: 150,
