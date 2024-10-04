@@ -10,20 +10,24 @@
 <div class="container mt-5">
     <h1>{{ person.name }}のタスク</h1>
     <a href="/" class="btn btn-secondary">トップページに戻る</a>
-    
-    <!-- タスクを折りたたむボタン -->
-    <button id="toggle-tasks" class="btn btn-secondary mb-3">タスクを折りたたむ</button>
 
+    <!-- タスクリスト -->
     <ul id="task-list" class="list-group mt-3">
         {% for task in tasks %}
-        <li class="list-group-item task-item" data-task-id="{{ task.id }}" style="display: block;">
-            {{ task.content | safe }}
+        <li class="list-group-item task-item" data-task-id="{{ task.id }}">
+            <div class="task-content" style="max-height: 200px; overflow: hidden;">
+                {{ task.content | safe }}
+            </div>
             {% if task.person %}
             <br><strong>担当者:</strong> {{ task.person.name }}
             {% else %}
             <br><strong>担当者:</strong> 未割り当て
             {% endif %}
             <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
+
+            <!-- 折りたたみボタン -->
+            <button class="btn btn-sm btn-secondary toggle-task mt-2" style="display: none;">もっと見る</button>
+
             <a href="/edit/{{ task.id }}" class="btn btn-sm btn-info float-right">編集</a>
             <a href="/delete/{{ task.id }}" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</a>
         </li>
@@ -32,20 +36,26 @@
 </div>
 
 <script>
-    // タスクの折りたたみボタンの処理
-    document.getElementById('toggle-tasks').addEventListener('click', function() {
-        var tasks = document.querySelectorAll('.task-item');
-        var button = this;
+    // 各タスクの高さを計測して、必要に応じて折りたたみボタンを表示
+    document.querySelectorAll('.task-item').forEach(function(taskItem) {
+        var contentDiv = taskItem.querySelector('.task-content');
+        var toggleButton = taskItem.querySelector('.toggle-task');
 
-        tasks.forEach(function(task) {
-            if (task.style.display === 'none') {
-                task.style.display = 'block'; // タスクを表示
-                button.textContent = 'タスクを折りたたむ'; // ボタンのテキストを変更
-            } else {
-                task.style.display = 'none'; // タスクを非表示
-                button.textContent = 'タスクを表示する'; // ボタンのテキストを変更
-            }
-        });
+        // 10行以上のタスクに対して折りたたみボタンを表示
+        if (contentDiv.scrollHeight > 200) {
+            toggleButton.style.display = 'block';  // ボタンを表示
+
+            // 折りたたみ/展開処理
+            toggleButton.addEventListener('click', function() {
+                if (contentDiv.style.maxHeight === '200px') {
+                    contentDiv.style.maxHeight = 'none';
+                    toggleButton.textContent = '折りたたむ';
+                } else {
+                    contentDiv.style.maxHeight = '200px';
+                    toggleButton.textContent = 'もっと見る';
+                }
+            });
+        }
     });
 
     var taskList = document.getElementById('task-list');
