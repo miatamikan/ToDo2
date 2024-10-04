@@ -157,10 +157,37 @@
         });
     });
 
-    // サイドバーの担当者リストをソート可能に
+    // タスクのリストをソート可能にする（長押し機能を追加）
+    var taskList = document.getElementById('task-list');
+    new Sortable(taskList, {
+        animation: 150,
+        delay: 300,  // 300ミリ秒長押し
+        delayOnTouchOnly: true,  // タッチデバイスのみで長押しを有効にする
+        onEnd: function (evt) {
+            let tasks = Array.from(taskList.children).map(task => task.dataset.taskId);
+            fetch('/update_task_order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({task_order: tasks})
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to update task order');
+                }
+                return response.json();
+            })
+            .then(data => console.log(data))
+            .catch(error => alert('タスクの順序更新に失敗しました: ' + error.message));
+        }
+    });
+
+    // サイドバーの担当者リストをソート可能にする（長押し機能を追加）
     var personList = document.getElementById('person-list');
     new Sortable(personList, {
         animation: 150,
+        delay: 300,  // 300ミリ秒長押し
+        delayOnTouchOnly: true,  // タッチデバイスのみで長押しを有効にする
         onEnd: function (evt) {
             let people = Array.from(personList.children).filter(li => li.dataset.personId).map(li => li.dataset.personId);
             fetch('/update_person_order', {
