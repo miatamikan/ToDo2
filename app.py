@@ -8,7 +8,10 @@ import pytz
 from flask import send_from_directory
 from sqlalchemy import text
 
+
 app = Flask(__name__)
+
+
 
 # ログインが必要なデコレータを作成
 def login_required(func):
@@ -105,6 +108,9 @@ def convert_to_jst(utc_time):
     return utc_time.astimezone(jst)
 
 
+
+
+
 # config.ini から設定を読み込む
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -138,9 +144,7 @@ class Person(db.Model):
 
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255), nullable=True)  # 自由に書けるモードではタイトルなし
     content = db.Column(db.Text, nullable=False)
-    remarks = db.Column(db.Text, nullable=True)
     priority = db.Column(db.Integer, nullable=False)
     person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=True)
     last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -224,7 +228,7 @@ def index():
 # 全タスクの取得
 @app.route('/all_tasks')
 def all_tasks():
-    if not session.get('logged_in')):
+    if not session.get('logged_in'):
         return redirect(url_for('login'))
     past_log_person = Person.query.filter_by(name='過去ログ').first()
     tasks = Task.query.filter(Task.person_id != past_log_person.id).order_by(Task.priority).all()  # 過去ログを除外
@@ -317,49 +321,20 @@ def add_task():
         return redirect(url_for('login'))
     people = Person.query.order_by(Person.order).all()
     if request.method == 'POST':
-        mode = request.form['mode']
-
-        # 自由に書けるモード
-        if mode == '自由に書けるモード':
-            content = request.form['content']
-            new_task = Task(content=content)
-
-        # イベント日程管理モード
+        content = request.form['content']
+        person_id = request.form.get('person_id')
+        min_priority = db.session.query(db.func.min(Task.priority)).scalar()
+        if min_priority is None:
+            min_priority = 0
         else:
-            title = request.form['title']
-            events = request.form.getlist('events[]')
-            dates = request.form.getlist('dates[]')
-            remarks = request.form['remarks']
-
-            # HTMLコンテンツを構築
-            content = f'<h2>{title}</h2>'
-            for event, date in zip(events, dates):
-                content += f'''
-                <div class="schedule-item">
-                    <div class="event" style="display:inline-block; width:70%;">{event}</div>
-                    <div class="date" style="display:inline-block; width:20%;">{date}</div>
-                    <button type="button" class="btn btn-danger btn-sm remove-event">削除</button>
-                </div>
-                '''
-
-            if remarks:
-                content += f'''
-                <div class="remark">
-                    <h3>備考</h3>
-                    <p>{remarks}</p>
-                </div>
-                '''
-
-            new_task = Task(title=title, content=content, remarks=remarks)
-
-        # タスクをデータベースに保存
+            min_priority -= 1
+        new_task = Task(content=content, person_id=person_id, priority=min_priority)
         db.session.add(new_task)
         db.session.commit()
         return redirect(url_for('index'))
-
     return render_template('add_task.html', people=people)
 
-# タスクの編集
+# タスクの編集時にJSTに変換
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_task(id):
     if not session.get('logged_in'):
@@ -367,46 +342,24 @@ def edit_task(id):
     task = Task.query.get_or_404(id)
     people = Person.query.order_by(Person.order).all()
     if request.method == 'POST':
-        mode = request.form['mode']
+        task.content = request.form['content']
+        task.person_id = request.form.get('person_id')
+        
+        # チェックボックスの値を取得し、優先度を最も高くする
+        if 'priority' in request.form:
+            min_priority = db.session.query(db.func.min(Task.priority)).scalar()
+            if min_priority is None:
+                min_priority = 0
+            else:
+                min_priority -= 1
+            task.priority = min_priority
 
-        # 自由に書けるモード
-        if mode == '自由に書けるモード':
-            task.content = request.form['content']
-            task.title = None
-            task.remarks = None
-
-        # イベント日程管理モード
-        else:
-            task.title = request.form['title']
-            events = request.form.getlist('events[]')
-            dates = request.form.getlist('dates[]')
-            task.remarks = request.form['remarks']
-
-            # HTMLコンテンツの再構築
-            content = f'<h2>{task.title}</h2>'
-            for event, date in zip(events, dates):
-                content += f'''
-                <div class="schedule-item">
-                    <div class="event" style="display:inline-block; width:70%;">{event}</div>
-                    <div class="date" style="display:inline-block; width:20%;">{date}</div>
-                    <button type="button" class="btn btn-danger btn-sm remove-event">削除</button>
-                </div>
-                '''
-
-            if task.remarks:
-                content += f'''
-                <div class="remark">
-                    <h3>備考</h3>
-                    <p>{task.remarks}</p>
-                </div>
-                '''
-
-            task.content = content
-
+        task.update_last_updated()  # 最終更新日時の更新
         db.session.commit()
         return redirect(url_for('index'))
-
     return render_template('edit_task.html', task=task, people=people)
+
+
 
 # タスク一覧表示時にJSTに変換して表示
 @app.template_filter('format_datetime_jst')
@@ -440,6 +393,7 @@ def past_log_tasks():
     past_log_person = Person.query.filter_by(name='過去ログ').first()
     tasks = Task.query.filter_by(person_id=past_log_person.id).order_by(Task.priority).all()
     return render_template('task_list.html', tasks=tasks, person_name='過去ログ')
+
 
 # robots.txtの設定（検索エンジンによるインデックスを防止）
 @app.route('/robots.txt')
