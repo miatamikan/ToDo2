@@ -3,116 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <title>タスクを編集</title>
+    <meta name="robots" content="noindex">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
 </head>
 <body>
 <div class="container mt-5">
     <h1>タスクを編集</h1>
-    
-    <!-- モード選択 -->
-    <div class="form-group">
-        <label for="mode">モード選択</label>
-        <select id="mode" name="mode" class="form-control">
-            <option value="自由に書けるモード" {% if task.title is none %}selected{% endif %}>自由に書けるモード</option>
-            <option value="イベント日程管理モード" {% if task.title is not none %}selected{% endif %}>イベント日程管理モード</option>
-        </select>
-    </div>
-
+    <a href="/" class="btn btn-secondary mb-3">トップページに戻る</a>
     <form method="POST">
-        <!-- 自由に書けるモード -->
-        <div id="free-mode" class="form-group" style="display: none;">
+        
+        <div class="form-group">
             <label for="content">タスクの内容</label>
-            <textarea id="content" name="content" class="form-control" rows="5">{{ task.content }}</textarea>
+            <textarea id="content" name="content" class="form-control" rows="20" required>{{ task.content }}</textarea>
         </div>
-
-        <!-- イベント日程管理モード -->
-        <div id="event-schedule-mode" style="display: none;">
-            <div class="form-group">
-                <label for="title">タイトル</label>
-                <input type="text" id="title" name="title" class="form-control" value="{{ task.title }}">
-            </div>
-
-            <div id="event-container">
-                {% for event, date in task.content %}
-                <div class="event-row">
-                    <div class="form-group" style="display:inline-block; width:70%;">
-                        <label for="event">イベント名</label>
-                        <input type="text" name="events[]" class="form-control" value="{{ event }}">
-                    </div>
-                    <div class="form-group" style="display:inline-block; width:20%;">
-                        <label for="date">日付</label>
-                        <input type="date" name="dates[]" class="form-control" value="{{ date }}">
-                    </div>
-                    <button type="button" class="btn btn-danger btn-sm remove-event">削除</button>
-                </div>
+        <div class="form-group">
+            <label for="person_id">担当者</label>
+            <select id="person_id" name="person_id" class="form-control">
+                <option value="">未割り当て</option>
+                {% for person in people %}
+                <option value="{{ person.id }}" {% if task.person_id == person.id %}selected{% endif %}>{{ person.name }}</option>
                 {% endfor %}
-            </div>
-
-            <button type="button" id="add-event" class="btn btn-secondary mt-2">行を追加</button>
-
-            <div class="form-group mt-3">
-                <label for="remarks">備考</label>
-                <textarea id="remarks" name="remarks" class="form-control" rows="5">{{ task.remarks }}</textarea>
-            </div>
+            </select>
         </div>
-
         <button type="submit" class="btn btn-primary">更新</button>
-    </form>
+        
+        <div class="form-check">
+    <input type="checkbox" class="form-check-input" id="priority" name="priority">
+    <label class="form-check-label" for="priority">優先度を上げる</label>
 </div>
 
-<script>
-    // モード切り替えのロジック
-    document.getElementById('mode').addEventListener('change', function() {
-        var mode = this.value;
-        if (mode === '自由に書けるモード') {
-            document.getElementById('free-mode').style.display = 'block';
-            document.getElementById('event-schedule-mode').style.display = 'none';
-        } else {
-            document.getElementById('free-mode').style.display = 'none';
-            document.getElementById('event-schedule-mode').style.display = 'block';
-        }
-    });
-
-    // ページロード時にモードを設定
-    window.onload = function() {
-        var mode = document.getElementById('mode').value;
-        if (mode === '自由に書けるモード') {
-            document.getElementById('free-mode').style.display = 'block';
-        } else {
-            document.getElementById('event-schedule-mode').style.display = 'block';
-        }
-    };
-
-    // 行を追加するロジック
-    document.getElementById('add-event').addEventListener('click', function() {
-        var container = document.getElementById('event-container');
-        var newEventRow = document.createElement('div');
-        newEventRow.classList.add('event-row');
-        newEventRow.innerHTML = `
-            <div class="form-group" style="display:inline-block; width:70%;">
-                <label for="event">イベント名</label>
-                <input type="text" name="events[]" class="form-control">
-            </div>
-            <div class="form-group" style="display:inline-block; width:20%;">
-                <label for="date">日付</label>
-                <input type="date" name="dates[]" class="form-control">
-            </div>
-            <button type="button" class="btn btn-danger btn-sm remove-event">削除</button>
-        `;
-        container.appendChild(newEventRow);
-
-        // 各行の削除ボタンにイベントを追加
-        newEventRow.querySelector('.remove-event').addEventListener('click', function() {
-            newEventRow.remove();
-        });
-    });
-
-    // 既存の削除ボタンにイベントを付与
-    document.querySelectorAll('.remove-event').forEach(function(button) {
-        button.addEventListener('click', function() {
-            button.closest('.event-row').remove();
-        });
-    });
-</script>
+    </form>
+</div>
 </body>
 </html>
