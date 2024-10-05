@@ -2,12 +2,13 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>タスクを追加</title>
+    <title>タスクを追加・編集</title>
     <meta name="robots" content="noindex">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
     <!-- タスクIDを使って動的にクラス名を生成するスタイル -->
     <style>
-        .task_{{ task.id }} .container {
+        .task_default .container,
+        .task_{{ task.id if task.id is not none else 'default' }} .container {
             max-width: 800px;
             margin: 0 auto;
             background: #fff;
@@ -15,31 +16,29 @@
             border-radius: 12px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
         }
+        /* 他のスタイルもここに追加 */
     </style>
 </head>
 <body>
-<div class="container mt-5 task_{{ task.id }}">
-    <h1>タスクを追加</h1>
+<div class="container mt-5 {% if task.id is not none %}task_{{ task.id }}{% else %}task_default{% endif %}">
+    <h1>タスクを追加・編集</h1>
     <a href="/" class="btn btn-secondary mb-3">トップページに戻る</a>
     <form method="POST">
         
         <div class="form-group">
             <label for="content">タスクの内容</label>
-            <textarea id="content" name="content" class="form-control" rows="20" required>
-<pre>
-</pre>
-            </textarea>
+            <textarea id="content" name="content" class="form-control" rows="20" required>{{ task.content if task else '' }}</textarea>
         </div>
         <div class="form-group">
             <label for="person_id">担当者</label>
             <select id="person_id" name="person_id" class="form-control">
                 <option value="">未割り当て</option>
                 {% for person in people %}
-                <option value="{{ person.id }}">{{ person.name }}</option>
+                <option value="{{ person.id }}" {% if task and task.person_id == person.id %}selected{% endif %}>{{ person.name }}</option>
                 {% endfor %}
             </select>
         </div>
-        <button type="submit" class="btn btn-primary">追加</button>
+        <button type="submit" class="btn btn-primary">保存</button>
     </form>
 </div>
 </body>
