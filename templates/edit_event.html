@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>イベント編集</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+</head>
+<body>
+<div class="container mt-5">
+    <h1>イベントの編集</h1>
+    <a href="/" class="btn btn-secondary mb-3">トップページに戻る</a>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="title">タイトル</label>
+            <input type="text" id="title" name="title" class="form-control" required>
+        </div>
+
+        <div id="event-rows">
+            <!-- イベントの行が動的に追加される部分 -->
+        </div>
+
+        <div class="form-group">
+            <label for="new_event">イベント</label>
+            <div class="d-flex">
+                <input type="text" id="new_event_name" class="form-control mr-2" placeholder="イベント名">
+                <input type="text" id="new_event_date" class="form-control datepicker mr-2" placeholder="日付を選択">
+                <button type="button" id="add_event_btn" class="btn btn-primary">追加</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="remarks">備考</label>
+            <textarea id="remarks" name="remarks" class="form-control" rows="4" placeholder="備考を入力（特になし）"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">更新</button>
+    </form>
+</div>
+
+<script>
+    $(function() {
+        $(".datepicker").datepicker({ dateFormat: 'yy-mm-dd' });
+        
+        // イベントの追加
+        $("#add_event_btn").click(function() {
+            const eventName = $("#new_event_name").val();
+            let eventDate = $("#new_event_date").val();
+
+            // 日付が空の場合、「未定」として扱う
+            if (!eventDate) {
+                eventDate = "未定";
+            }
+
+            if (eventName) {
+                const newRow = `
+                    <div class="form-group d-flex align-items-center">
+                        <input type="text" name="event_name[]" class="form-control mr-2" value="${eventName}">
+                        <input type="text" name="event_date[]" class="form-control datepicker mr-2" value="${eventDate}">
+                        <button type="button" class="btn btn-danger remove_event_btn">削除</button>
+                    </div>
+                `;
+                $("#event-rows").append(newRow);
+                $(".datepicker").datepicker({ dateFormat: 'yy-mm-dd' }); // 再初期化
+
+                // クリア
+                $("#new_event_name").val('');
+                $("#new_event_date").val('');
+            }
+        });
+
+        // イベントの削除
+        $(document).on("click", ".remove_event_btn", function() {
+            $(this).closest(".form-group").remove();
+        });
+    });
+</script>
+</body>
+</html>
