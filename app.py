@@ -8,6 +8,7 @@ import pytz
 from flask import send_from_directory
 from sqlalchemy import text
 
+
 app = Flask(__name__)
 
 
@@ -150,16 +151,6 @@ class Task(db.Model):
 
     def update_last_updated(self):
         self.last_updated = datetime.utcnow()
-
-# イベントモデルの定義
-class Event(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    event_name = db.Column(db.String(100), nullable=False)
-    event_date = db.Column(db.String(50), nullable=True)  # 日付がNoneになる可能性がある
-    remarks = db.Column(db.Text, nullable=True)
-    priority = db.Column(db.Integer, nullable=False, default=0)
-
 
 
 # 初期データの作成
@@ -403,46 +394,6 @@ def past_log_tasks():
     tasks = Task.query.filter_by(person_id=past_log_person.id).order_by(Task.priority).all()
     return render_template('task_list.html', tasks=tasks, person_name='過去ログ')
 
-# イベント編集ページの表示
-@app.route('/edit_event', methods=['GET', 'POST'])
-def edit_event():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        title = request.form['title']
-        events = []
-        event_names = request.form.getlist('event_name[]')
-        event_dates = request.form.getlist('event_date[]')
-        remarks = request.form.get('remarks', '特になし')
-
-        # イベントをデータベースに追加
-        for i, event_name in enumerate(event_names):
-            event_date = event_dates[i] if event_dates[i] != "未定" else None
-            new_event = Event(title=title, event_name=event_name, event_date=event_date, remarks=remarks, priority=i)
-            db.session.add(new_event)
-        
-        db.session.commit()
-        return redirect(url_for('index'))
-
-    return render_template('edit_event.html')
-
-# イベント一覧表示
-@app.route('/all_events')
-def all_events():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-
-    events = Event.query.order_by(Event.priority).all()
-    for event in events:
-        if event.event_date is None:
-            event.event_date = "未定"
-        if event.remarks is None:
-            event.remarks = "特になし"
-    
-    return render_template('event_list.html', events=events)
-
-
 
 # robots.txtの設定（検索エンジンによるインデックスを防止）
 @app.route('/robots.txt')
@@ -450,4 +401,4 @@ def robots_txt():
     return "User-agent: *\nDisallow: /", 200, {'Content-Type': 'text/plain'}
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
