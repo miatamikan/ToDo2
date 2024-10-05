@@ -3,7 +3,8 @@
         <h4 id="task-title" class="card-title">{{ person_name if person_name else "タスク一覧" }}</h4>  <!-- タイトルに担当者名を表示 -->
         <ul id="task-list" class="list-group mt-3">
             {% for task in tasks %}
-            <li class="list-group-item task-item" data-task-id="{{ task.id }}">
+            <!-- タスクごとに動的なクラス名を付与 -->
+            <li class="list-group-item task-item task_{{ task.id }}" data-task-id="{{ task.id }}">
                 <div class="task-content" style="max-height: 400px; overflow: hidden;">
                     {{ task.content | safe }}
                 </div>
@@ -76,15 +77,61 @@
     document.title = "{{ person_name if person_name else 'タスク一覧' }}";  // ブラウザタブのタイトルも更新
 </script>
 
-<!-- カスタムスタイルを追加 -->
+<!-- タスクごとの動的なスタイルを追加 -->
 <style>
-    .btn-toggle-task {
-        background-color: #007bff; /* 青色に設定 */
-        color: white;
+    {% for task in tasks %}
+    .task_{{ task.id }} {
+        font-family: sans-serif;
+        background: #f0f2f5;
+        padding: 20px;
+        color: #333;
     }
-
-    .btn-toggle-task:hover {
-        background-color: #0056b3; /* ホバー時に少し濃い青色に変更 */
-        color: white;
+    .task_{{ task.id }} .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
     }
+    .task_{{ task.id }} h1 {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 40px;
+    }
+    .task_{{ task.id }} .schedule-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        background: #f9fafc;
+        border-left: 5px solid #3498db;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        transition: 0.3s;
+    }
+    .task_{{ task.id }} .schedule-item:hover {
+        transform: translateY(-5px);
+    }
+    .task_{{ task.id }} .event {
+        font-weight: bold;
+        color: #34495e;
+    }
+    .task_{{ task.id }} .date {
+        color: #7f8c8d;
+        text-align: right;
+    }
+    .task_{{ task.id }} .remark {
+        margin-top: 40px;
+        padding: 20px;
+        background: #fef8e7;
+        border-left: 5px solid #e67e22;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+    .task_{{ task.id }} .remark h3 {
+        color: #e67e22;
+    }
+    {% endfor %}
 </style>
