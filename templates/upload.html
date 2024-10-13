@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Uploader</title>
+    <script>
+        function copyToClipboard(url) {
+            navigator.clipboard.writeText(url).then(function() {
+                alert('URL copied to clipboard');
+            }, function(err) {
+                alert('Failed to copy: ', err);
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Upload a File</h1>
+    
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Upload">
+    </form>
+
+    <h2>Uploaded Files</h2>
+    <ul>
+        {% for file in files %}
+        <li>
+            <a href="{{ file.url }}" target="_blank">{{ file.filename }}</a>
+            <button onclick="copyToClipboard('{{ file.url }}')">Copy URL</button>
+            <form action="{{ url_for('delete_file', id=file.id) }}" method="POST" style="display:inline;">
+                <button type="submit" onclick="return confirm('Are you sure you want to delete this file?')">Delete</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
