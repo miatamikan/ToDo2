@@ -139,9 +139,10 @@
         #task-list li:nth-child(even) {
             background-color: #2c2c2c;
         }
+        /* ホバー時のスタイルを暗めに調整 */
         #task-list li:hover {
-            background-color: #00bcd4; /* ホバー時の色を変更 */
-            color: #121212;
+            background-color: #333333; /* 暗めの色に変更 */
+            color: #e0e0e0;
         }
         /* メインコンテンツ内のタイトルの色を調整 */
         #main-content-area h1, #main-content-area h2, #main-content-area h3, #main-content-area h4, #main-content-area h5, #main-content-area h6 {
@@ -156,6 +157,19 @@
             padding: 15px;
             overflow-x: auto;
             white-space: pre-wrap;
+        }
+
+        /* サイドバーもスクロールできるように */
+        .sidebar, .main-content {
+            overflow-y: scroll;
+            height: 100vh;
+        }
+        .main-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .main-content::-webkit-scrollbar-thumb {
+            background: #3d3d3d;
+            border-radius: 4px;
         }
     </style>
 </head>
