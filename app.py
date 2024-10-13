@@ -163,6 +163,14 @@ class Task(db.Model):
     def update_last_updated(self):
         self.last_updated = datetime.utcnow()
 
+# Upload モデルの定義
+class Upload(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    filepath = db.Column(db.String(255), nullable=False)
+    upload_time = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+    url = db.Column(db.String(255), nullable=False)
+
 
 # 初期データの作成
 def create_initial_data():
