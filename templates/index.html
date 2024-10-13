@@ -9,7 +9,7 @@
     <!-- Font Awesomeアイコン -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <!-- Googleフォント -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+JP&display=swap" rel="stylesheet">
     <style>
         body {
             background-color: #121212;
@@ -140,6 +140,16 @@
         #main-content-area h1, #main-content-area h2, #main-content-area h3, #main-content-area h4, #main-content-area h5, #main-content-area h6 {
             color: #00bcd4; /* タイトルを見やすく */
         }
+        /* <pre>タグのスタイルを追加 */
+        pre {
+            font-family: 'Noto Sans JP', 'ヒラギノ角ゴ Pro', 'メイリオ', '游ゴシック', 'Courier New', Courier, monospace;
+            font-size: 16px;
+            line-height: 1.6;
+            color: white;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 <body>
@@ -157,7 +167,7 @@
     <div class="container-fluid">
         <!-- サイドバー -->
         <div class="sidebar">
-            <h3>メンバー</h3>
+            <h3>INDEX</h3>
             <ul id="person-list" class="list-group">
                 <li class="list-group-item">
                     <a href="#" onclick="loadContent('/all_tasks')">全タスク</a>
@@ -169,7 +179,7 @@
                 {% endfor %}
             </ul>
             <div class="sidebar-bottom-link">
-                <a href="/edit_person" class="btn">担当者の編集</a>
+                <a href="/edit_person" class="btn">Person Edit</a>
             </div>
         </div>
         <!-- メインコンテンツ -->
