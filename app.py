@@ -131,9 +131,18 @@ if not os.path.exists(PERSISTENT_DIR):
         app.logger.error(f'ディレクトリの作成に失敗しました: {e}')
         raise
 
+# /persistent/uploads ディレクトリが存在しない場合は作成
+UPLOAD_DIR = os.path.join(PERSISTENT_DIR, 'uploads')
+if not os.path.exists(UPLOAD_DIR):
+    try:
+        os.makedirs(UPLOAD_DIR)
+    except OSError as e:
+        app.logger.error(f'アップロード用ディレクトリの作成に失敗しました: {e}')
+        raise
+
 # データベースの設定（永続ディスクにSQLiteを保存）
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{PERSISTENT_DIR}/todo.db'
-db = SQLAlchemy(app)
+
 
 # モデルの定義
 class Person(db.Model):
@@ -408,7 +417,7 @@ def upload_file():
             return redirect(request.url)
         if file:
             filename = file.filename
-            filepath = os.path.join('uploads', filename)
+            filepath = os.path.join(UPLOAD_DIR, filename)
             file.save(filepath)
             file_url = url_for('uploaded_file', filename=filename, _external=True)
             
@@ -427,7 +436,7 @@ def upload_file():
 @app.route('/uploads/<filename>')
 @login_required
 def uploaded_file(filename):
-    return send_file(os.path.join('uploads', filename))
+    return send_file(os.path.join(UPLOAD_DIR, filename))
 
 # アップロードされたファイルを削除するエンドポイント
 @app.route('/delete/<int:id>', methods=['POST'])
