@@ -449,7 +449,7 @@ def uploaded_file(filename):
     return send_file(os.path.join(UPLOAD_DIR, filename))
 
 # アップロードされたファイルを削除するエンドポイント
-@app.route('/delete/<int:id>', methods=['POST'])
+@app.route('/delete_file/<int:id>', methods=['POST'])
 @login_required
 def delete_file(id):
     file = Upload.query.get(id)  # IDでファイルを取得
@@ -468,6 +468,7 @@ def delete_file(id):
         flash('File not found in database.')
     
     return redirect(url_for('upload_file'))
+
 
 
 
