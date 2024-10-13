@@ -458,17 +458,19 @@ def delete_file(id):
             # ファイルが存在するか確認し、削除
             if os.path.exists(file.filepath):
                 os.remove(file.filepath)
-            # データベースからエントリを削除
-            db.session.delete(file)
-            db.session.commit()
-            flash('File deleted successfully')
+                # データベースからエントリを削除
+                db.session.delete(file)
+                db.session.commit()
+                flash('File deleted successfully')
+            else:
+                flash('File not found on disk.')
         except Exception as e:
             flash(f'Error deleting file: {e}')
     else:
-        flash('File not found.')
-        return redirect(url_for('upload_file'))
+        flash('File not found in database.')
     
     return redirect(url_for('upload_file'))
+
 
 
 
