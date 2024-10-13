@@ -142,6 +142,8 @@ if not os.path.exists(UPLOAD_DIR):
 
 # データベースの設定（永続ディスクにSQLiteを保存）
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{PERSISTENT_DIR}/todo.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # SQLAlchemyのイベント追跡を無効化（推奨）
+db = SQLAlchemy(app)  # これが必要
 
 
 # モデルの定義
