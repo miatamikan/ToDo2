@@ -127,14 +127,21 @@
         }
         /* タスクリストのスタイル */
         #task-list li {
-            background-color: #1f1f1f;
             border-bottom: 1px solid #3d3d3d;
             padding: 15px;
             transition: background-color 0.3s;
             color: #e0e0e0; /* テキストの色を見やすく */
         }
-        #task-list li:hover {
+        /* タスク行の交互色付け */
+        #task-list li:nth-child(odd) {
+            background-color: #1f1f1f;
+        }
+        #task-list li:nth-child(even) {
             background-color: #2c2c2c;
+        }
+        #task-list li:hover {
+            background-color: #00bcd4; /* ホバー時の色を変更 */
+            color: #121212;
         }
         /* メインコンテンツ内のタイトルの色を調整 */
         #main-content-area h1, #main-content-area h2, #main-content-area h3, #main-content-area h4, #main-content-area h5, #main-content-area h6 {
