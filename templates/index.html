@@ -69,7 +69,7 @@
 <div class="container-fluid">
     <!-- ヘッダー -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="#">ToDo2</a>
+        <a class="navbar-brand" href="#">ToDoリスト</a>
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
@@ -105,14 +105,13 @@
             <label for="task-search" class="sr-only">タスクを検索</label>
             <input type="text" id="task-search" class="form-control mb-3" placeholder="タスクを検索">
 
+            <!-- タスク一覧表示部分 -->
             <div id="main-content" class="mt-4">
-                <!-- デフォルトの全タスク一覧をここにロードします -->
-                <script>
-                    $(document).ready(function() {
-                        loadContent('/all_tasks');  // 初期表示で全タスクを表示
-                    });
-                </script>
+                <ul id="task-list" class="list-group mt-3">
+                    <!-- タスクがここに動的にロードされます -->
+                </ul>
             </div>
+
             <!-- タスク追加ボタン -->
             <div class="mt-2">
                 <a href="/add" class="btn btn-primary">新規登録</a>
@@ -124,61 +123,51 @@
 <!-- フローティングアクションボタン -->
 <a href="/add" class="floating-button">+</a>
 
-<!-- 担当者リストとコンテンツをロードするためのJavaScript -->
+<!-- JavaScriptコード -->
 <script>
-    // コンテンツをロードする関数（担当者名もタイトルに表示）
-    function loadContent(url) {
-        $.get(url, function(data) {
-            $("#main-content").html(data);
+    let page = 1;  // 現在のページ
+    const perPage = 20;  // 1ページに表示する件数
+    let isLoading = false;  // 読み込み中かどうかを管理
 
-            // タイトルを更新する（サーバーから動的に渡されたタイトルを表示）
-            let newTitle = $("#task-title").text();
-            document.title = newTitle;
+    // 無限スクロールを実装
+    function loadMoreTasks() {
+        if (isLoading) return;
+        isLoading = true;
+        page++;
+
+        $.get(`/load_tasks?page=${page}&per_page=${perPage}`, function(data) {
+            if (data.tasks.length > 0) {
+                data.tasks.forEach(function(task) {
+                    $('#task-list').append(`
+                        <li class="list-group-item">
+                            <div class="task-content" style="max-height: 400px; overflow: hidden;">
+                                ${task.content}
+                            </div>
+                            <br><strong>担当者:</strong> ${task.person_name}
+                            <br><strong>最終更新日:</strong> ${task.last_updated}
+                        </li>
+                    `);
+                });
+                isLoading = false;
+                if (!data.has_next) {
+                    $(window).off('scroll');  // 次がない場合、スクロールイベントを解除
+                }
+            }
         });
     }
 
-    // 検索機能（AND検索対応）
-    document.getElementById('task-search').addEventListener('input', function() {
-        let filter = this.value.trim().toLowerCase();
-        let keywords = filter.split(/\s+/); // 入力を全角スペースや半角スペースで分割
-
-        let tasks = document.querySelectorAll('#task-list li');
-        tasks.forEach(task => {
-            let taskText = task.textContent.toLowerCase();
-
-            // すべてのキーワードがタスクに含まれているかチェック
-            let match = keywords.every(keyword => taskText.includes(keyword));
-
-            if (match) {
-                task.style.display = '';  // 表示
-            } else {
-                task.style.display = 'none';  // 非表示
-            }
-        });
-    });
-
-    // サイドバーの担当者リストをソート可能に
-    var personList = document.getElementById('person-list');
-    new Sortable(personList, {
-        animation: 150,
-        onEnd: function (evt) {
-            let people = Array.from(personList.children).filter(li => li.dataset.personId).map(li => li.dataset.personId);
-            fetch('/update_person_order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({person_order: people})
-            }).then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to update person order');
-                }
-                return response.json();
-            })
-            .then(data => console.log(data))
-            .catch(error => alert('担当者の順序更新に失敗しました: ' + error.message));
+    // スクロールイベントを監視
+    $(window).scroll(function() {
+        if ($(window).scrollTop() + $(window).height() > $(document).height() - 100) {
+            loadMoreTasks();  // スクロールが下部に達したとき、次のページのタスクをロード
         }
     });
+
+    // 初回タスク読み込み
+    $(document).ready(function() {
+        loadMoreTasks();
+    });
 </script>
+
 </body>
 </html>
