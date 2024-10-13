@@ -394,6 +394,53 @@ def past_log_tasks():
     tasks = Task.query.filter_by(person_id=past_log_person.id).order_by(Task.priority).all()
     return render_template('task_list.html', tasks=tasks, person_name='過去ログ')
 
+# ファイルアップロード機能のエンドポイント
+@app.route('/upload', methods=['GET', 'POST'])
+@login_required  # ログインが必要なエンドポイント
+def upload_file():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if file:
+            filename = file.filename
+            filepath = os.path.join('uploads', filename)
+            file.save(filepath)
+            file_url = url_for('uploaded_file', filename=filename, _external=True)
+            
+            # Save file info to database
+            new_file = Upload(filename=filename, filepath=filepath, url=file_url)
+            db.session.add(new_file)
+            db.session.commit()
+            
+            flash('File successfully uploaded')
+            return redirect(url_for('upload_file'))
+    
+    files = Upload.query.all()
+    return render_template('upload.html', files=files)
+
+# アップロードされたファイルを取得するエンドポイント
+@app.route('/uploads/<filename>')
+@login_required
+def uploaded_file(filename):
+    return send_file(os.path.join('uploads', filename))
+
+# アップロードされたファイルを削除するエンドポイント
+@app.route('/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_file(id):
+    file = Upload.query.get(id)
+    if file:
+        os.remove(file.filepath)
+        db.session.delete(file)
+        db.session.commit()
+        flash('File deleted successfully')
+    return redirect(url_for('upload_file'))
+
 
 # robots.txtの設定（検索エンジンによるインデックスを防止）
 @app.route('/robots.txt')
