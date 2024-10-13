@@ -454,11 +454,22 @@ def uploaded_file(filename):
 def delete_file(id):
     file = Upload.query.get(id)
     if file:
-        os.remove(file.filepath)
-        db.session.delete(file)
-        db.session.commit()
-        flash('File deleted successfully')
+        try:
+            # ファイルが存在するか確認し、削除
+            if os.path.exists(file.filepath):
+                os.remove(file.filepath)
+            # データベースからエントリを削除
+            db.session.delete(file)
+            db.session.commit()
+            flash('File deleted successfully')
+        except Exception as e:
+            flash(f'Error deleting file: {e}')
+    else:
+        flash('File not found.')
+        return redirect(url_for('upload_file'))
+    
     return redirect(url_for('upload_file'))
+
 
 
 # robots.txtの設定（検索エンジンによるインデックスを防止）
