@@ -452,24 +452,23 @@ def uploaded_file(filename):
 @app.route('/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_file(id):
-    file = Upload.query.get(id)
+    file = Upload.query.get(id)  # IDでファイルを取得
     if file:
         try:
-            # ファイルが存在するか確認し、削除
+            # ファイルが存在すれば削除
             if os.path.exists(file.filepath):
                 os.remove(file.filepath)
-                # データベースからエントリを削除
-                db.session.delete(file)
-                db.session.commit()
-                flash('File deleted successfully')
-            else:
-                flash('File not found on disk.')
+            # データベースからエントリを削除
+            db.session.delete(file)
+            db.session.commit()
+            flash('File deleted successfully')
         except Exception as e:
             flash(f'Error deleting file: {e}')
     else:
         flash('File not found in database.')
     
     return redirect(url_for('upload_file'))
+
 
 
 
