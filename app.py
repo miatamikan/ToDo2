@@ -394,6 +394,37 @@ def past_log_tasks():
     tasks = Task.query.filter_by(person_id=past_log_person.id).order_by(Task.priority).all()
     return render_template('task_list.html', tasks=tasks, person_name='過去ログ')
 
+# 無限スクロール用
+@app.route('/load_tasks', methods=['GET'])
+def load_tasks():
+    if not session.get('logged_in'):
+        return jsonify({'status': 'failed', 'message': 'Unauthorized'}), 401
+
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    query = request.args.get('query', '', type=str)
+
+    past_log_person = Person.query.filter_by(name='過去ログ').first()
+    tasks_query = Task.query.filter(Task.person_id != past_log_person.id)
+
+    if query:
+        tasks_query = tasks_query.filter(Task.content.ilike(f'%{query}%'))
+
+    tasks_query = tasks_query.order_by(Task.priority)
+    paginated_tasks = tasks_query.paginate(page, per_page, False)
+    
+    tasks = [{
+        'id': task.id,
+        'content': task.content,
+        'person_name': task.person.name if task.person else '未割り当て',
+        'last_updated': task.last_updated.strftime('%Y-%m-%d %H:%M')
+    } for task in paginated_tasks.items]
+
+    return jsonify({
+        'tasks': tasks,
+        'has_next': paginated_tasks.has_next
+    })
+
 
 # robots.txtの設定（検索エンジンによるインデックスを防止）
 @app.route('/robots.txt')
