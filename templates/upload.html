@@ -212,6 +212,10 @@
                 }
             };
 
+            xhr.onerror = function() {
+                showNotification('Network error occurred during file upload.');
+            };
+
             xhr.send(formData);
         }
     </script>
@@ -229,7 +233,9 @@
         </form>
 
         <div class="uploaded-files">
-            <h2>Uploaded Files</h2>
+            <button onclick="deleteSelectedFiles()" class="delete" style="margin-bottom: 10px;">Delete Selected Files</button>
+
+<h2>Uploaded Files</h2>
             <ul>
                 {% for file in files %}
                 <li>
@@ -241,7 +247,7 @@
                 </li>
                 {% endfor %}
             </ul>
-            <button onclick="deleteSelectedFiles()" class="delete">Delete Selected Files</button>
+            
         </div>
     </div>
 
@@ -271,6 +277,10 @@
                 } else {
                     showNotification('Error deleting files.');
                 }
+            };
+
+            xhr.onerror = function() {
+                showNotification('Network error occurred while deleting files.');
             };
 
             xhr.send(formData);
