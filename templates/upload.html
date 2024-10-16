@@ -120,6 +120,38 @@
         }
     </style>
     <script>
+        document.addEventListener('paste', function (event) {
+            const items = event.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const file = items[i].getAsFile();
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    uploadImage(formData);
+                }
+            }
+        });
+
+        function uploadImage(formData) {
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Image uploaded successfully!');
+                    // Optionally refresh the list of uploaded files
+                } else {
+                    alert('Image upload failed.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while uploading the image.');
+            });
+        }
+
         function copyToClipboard(url) {
             navigator.clipboard.writeText(url).then(function() {
                 alert('URL copied to clipboard');
@@ -133,7 +165,7 @@
     <div class="container">
         <h1>Upload a File</h1>
         
-        <form method="POST" enctype="multipart/form-data">
+        <form method="POST" enctype="multipart/form-data" action="/upload">
             <input type="file" name="file" required>
             <input type="submit" value="Upload">
         </form>
