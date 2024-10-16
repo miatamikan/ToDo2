@@ -182,7 +182,7 @@
             <ul>
                 {% for file in files %}
                 <li>
-                    {% if file.is_image %}
+                    {% if file.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
                     <img src="{{ file.url }}" alt="Thumbnail" class="thumbnail">
                     {% endif %}
                     <a href="{{ file.url }}" target="_blank"><i class="fas fa-file-alt"></i> {{ file.filename }}</a>
