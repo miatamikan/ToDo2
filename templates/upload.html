@@ -192,7 +192,7 @@
         <div class="uploaded-files">
             <h2>Uploaded Files</h2>
             <ul>
-                {% for file in files %}
+                {% for file in files[::-1] %}
                 <li>
                     {% if file.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
                     <img src="{{ file.url }}" alt="Thumbnail" class="thumbnail">
