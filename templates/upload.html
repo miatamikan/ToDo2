@@ -97,6 +97,11 @@
             height: 50px;
             object-fit: cover;
             margin-right: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .thumbnail:hover {
+            transform: scale(2);
         }
 
         .action-buttons {
@@ -144,7 +149,12 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     alert('Image uploaded successfully!');
@@ -155,7 +165,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while uploading the image.');
+                alert('An error occurred while uploading the image. Please try again.');
             });
         }
 
