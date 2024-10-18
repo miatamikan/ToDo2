@@ -236,6 +236,9 @@
                 // タイトルを更新する（サーバーから動的に渡されたタイトルを表示）
                 let newTitle = $("#task-title").text();
                 document.title = newTitle;
+
+                // スクロール位置をリセットする
+                $(".main-content").scrollTop(0);
             });
         }
         // 検索機能（AND検索対応）
