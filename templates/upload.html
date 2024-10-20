@@ -75,11 +75,12 @@
             background: #f9f9f9;
             padding: 15px;
             margin: 10px 0;
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
             align-items: center;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            gap: 10px;
         }
 
         .uploaded-files a {
@@ -132,45 +133,6 @@
         }
     </style>
     <script>
-        document.addEventListener('paste', function (event) {
-            const items = event.clipboardData.items;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    const file = items[i].getAsFile();
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    uploadImage(formData);
-                }
-            }
-        });
-
-        function uploadImage(formData) {
-            fetch('/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(errorData => {
-                        throw new Error(errorData.message || 'Network response was not ok');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    alert('Image uploaded successfully!');
-                    setTimeout(() => location.reload(), 500); // Slight delay before refreshing the page
-                } else {
-                    alert('Image upload failed. Please try again.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while uploading the image. Please try again.');
-            });
-        }
-
         function copyToClipboard(url) {
             navigator.clipboard.writeText(url).then(function() {
                 alert('URL copied to clipboard');
@@ -194,10 +156,9 @@
             <ul>
                 {% for file in files[::-1] %}
                 <li>
-                    {% if file.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
-                    <img src="{{ file.url }}" alt="Thumbnail" class="thumbnail">
-                    {% endif %}
+                    <span>{{ file.upload_time.strftime('%Y-%m-%d %H:%M:%S') }}</span>
                     <a href="{{ file.url }}" target="_blank"><i class="fas fa-file-alt"></i> {{ file.filename }}</a>
+                    <span>{{ (os.path.getsize(file.filepath) / 1024) | round(2) }} KB</span>
                     <div class="action-buttons">
                         <button onclick="copyToClipboard('{{ file.url }}')"><i class="fas fa-copy"></i> Copy URL</button>
                         <form action="{{ url_for('delete_file', id=file.id) }}" method="POST" style="display:inline;">
