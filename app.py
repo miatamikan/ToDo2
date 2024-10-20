@@ -8,10 +8,7 @@ import pytz
 from flask import send_from_directory
 from sqlalchemy import text
 
-
 app = Flask(__name__)
-
-
 
 # ログインが必要なデコレータを作成
 def login_required(func):
@@ -94,22 +91,10 @@ def db_edit():
     
     return render_template('db_edit.html', result=result, error=error)
 
-
-# 過去ログ担当者を定義
-def create_initial_data():
-    if not Person.query.filter_by(name='過去ログ').first():
-        past_log_person = Person(name='過去ログ', order=9999)  # 順番を後ろに
-        db.session.add(past_log_person)
-        db.session.commit()
-
 # 日本標準時に変換する関数
 def convert_to_jst(utc_time):
     jst = pytz.timezone('Asia/Tokyo')
     return utc_time.astimezone(jst)
-
-
-
-
 
 # config.ini から設定を読み込む
 config = configparser.ConfigParser()
@@ -145,7 +130,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{PERSISTENT_DIR}/todo.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # SQLAlchemyのイベント追跡を無効化（推奨）
 db = SQLAlchemy(app)  # これが必要
 
-
 # モデルの定義
 class Person(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -168,9 +152,9 @@ class Upload(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(255), nullable=False)
     filepath = db.Column(db.String(255), nullable=False)
+    filesize = db.Column(db.Integer, nullable=False)  # ファイルサイズを追加
     upload_time = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     url = db.Column(db.String(255), nullable=False)
-
 
 # 初期データの作成
 def create_initial_data():
@@ -178,6 +162,11 @@ def create_initial_data():
         person_a = Person(name='Aさん', order=0)
         person_b = Person(name='Bさん', order=1)
         db.session.add_all([person_a, person_b])
+        db.session.commit()
+    # 過去ログ担当者を追加
+    if not Person.query.filter_by(name='過去ログ').first():
+        past_log_person = Person(name='過去ログ', order=9999)
+        db.session.add(past_log_person)
         db.session.commit()
 
 # テーブル作成（初回起動時のみ）
@@ -253,7 +242,6 @@ def all_tasks():
     tasks = Task.query.filter(Task.person_id != past_log_person.id).order_by(Task.priority).all()  # 過去ログを除外
     return render_template('task_list.html', tasks=tasks, person_name=None)
 
-
 # 担当者別タスクの取得
 @app.route('/person_tasks/<int:person_id>')
 def person_tasks(person_id):
@@ -276,7 +264,6 @@ def update_task_order():
             task.priority = index
     db.session.commit()  # No need to update last_updated here
     return jsonify({'status': 'success'})
-
 
 # 担当者の順序更新
 @app.route('/update_person_order', methods=['POST'])
@@ -378,8 +365,6 @@ def edit_task(id):
         return redirect(url_for('index'))
     return render_template('edit_task.html', task=task, people=people)
 
-
-
 # タスク一覧表示時にJSTに変換して表示
 @app.template_filter('format_datetime_jst')
 def format_datetime_jst(value):
@@ -387,6 +372,18 @@ def format_datetime_jst(value):
         return '未更新'
     jst_time = convert_to_jst(value)
     return jst_time.strftime('%Y年%m月%d日 %H:%M')
+
+# ファイルサイズをフォーマットするフィルタを追加
+@app.template_filter('filesizeformat')
+def filesizeformat(value):
+    if value < 1024:
+        return f'{value} バイト'
+    elif value < 1024 * 1024:
+        return f'{value / 1024:.2f} KB'
+    elif value < 1024 * 1024 * 1024:
+        return f'{value / (1024 * 1024):.2f} MB'
+    else:
+        return f'{value / (1024 * 1024 * 1024):.2f} GB'
 
 # タスクの削除（担当者を過去ログに変更）
 @app.route('/delete/<int:id>', methods=['POST'])
@@ -419,24 +416,25 @@ def past_log_tasks():
 def upload_file():
     if request.method == 'POST':
         if 'file' not in request.files:
-            flash('No file part')
+            flash('ファイルが選択されていません')
             return redirect(request.url)
         file = request.files['file']
         if file.filename == '':
-            flash('No selected file')
+            flash('ファイルが選択されていません')
             return redirect(request.url)
         if file:
             filename = file.filename
             filepath = os.path.join(UPLOAD_DIR, filename)
             file.save(filepath)
+            filesize = os.path.getsize(filepath)  # ファイルサイズを取得
             file_url = url_for('uploaded_file', filename=filename, _external=True)
             
-            # Save file info to database
-            new_file = Upload(filename=filename, filepath=filepath, url=file_url)
+            # ファイル情報をデータベースに保存
+            new_file = Upload(filename=filename, filepath=filepath, filesize=filesize, url=file_url)
             db.session.add(new_file)
             db.session.commit()
             
-            flash('File successfully uploaded')
+            flash('ファイルが正常にアップロードされました')
             return redirect(url_for('upload_file'))
     
     files = Upload.query.all()
@@ -461,18 +459,13 @@ def delete_file(id):
             # データベースからエントリを削除
             db.session.delete(file)
             db.session.commit()
-            flash('File deleted successfully')
+            flash('ファイルが削除されました')
         except Exception as e:
-            flash(f'Error deleting file: {e}')
+            flash(f'ファイルの削除中にエラーが発生しました: {e}')
     else:
-        flash('File not found in database.')
+        flash('データベースにファイルが見つかりませんでした。')
     
     return redirect(url_for('upload_file'))
-
-
-
-
-
 
 # robots.txtの設定（検索エンジンによるインデックスを防止）
 @app.route('/robots.txt')
