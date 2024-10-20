@@ -3,10 +3,10 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 import configparser
 import time
-from datetime import datetime  # 日付変換に必要
+from datetime import datetime
 import pytz
 from flask import send_from_directory
-from sqlalchemy import text
+from sqlalchemy import text, nulls_last  # nulls_lastを追加
 
 app = Flask(__name__)
 
@@ -68,29 +68,6 @@ def delete_db():
 def delete_db_page():
     return render_template('delete_db.html')
 
-@app.route('/db_edit', methods=['GET', 'POST'])
-@login_required  # ログインが必要なエンドポイント
-def db_edit():
-    result = None
-    error = None
-    if request.method == 'POST':
-        sql_query = request.form.get('sql_query')
-        try:
-            # SQLクエリを実行する
-            with db.engine.connect() as connection:
-                # text関数を使用してSQLクエリを実行
-                result_proxy = connection.execute(text(sql_query))
-                
-                if result_proxy.returns_rows:
-                    # 各列の結果をタプル形式に変換して、より分かりやすく表示
-                    result = [list(row) for row in result_proxy]
-                else:
-                    result = "Query executed successfully."
-        except Exception as e:
-            error = f"Error: {e}"
-    
-    return render_template('db_edit.html', result=result, error=error)
-
 # 日本標準時に変換する関数
 def convert_to_jst(utc_time):
     jst = pytz.timezone('Asia/Tokyo')
@@ -143,6 +120,7 @@ class Task(db.Model):
     priority = db.Column(db.Integer, nullable=False)
     person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=True)
     last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    follow_up_date = db.Column(db.DateTime, nullable=True)  # フォロー日を追加
 
     def update_last_updated(self):
         self.last_updated = datetime.utcnow()
@@ -238,8 +216,14 @@ def index():
 def all_tasks():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
+    sort_option = request.args.get('sort', 'priority')
     past_log_person = Person.query.filter_by(name='過去ログ').first()
-    tasks = Task.query.filter(Task.person_id != past_log_person.id).order_by(Task.priority).all()  # 過去ログを除外
+    if sort_option == 'follow_up_date':
+        tasks = Task.query.filter(Task.person_id != past_log_person.id).order_by(
+            nulls_last(Task.follow_up_date.asc())
+        ).all()
+    else:
+        tasks = Task.query.filter(Task.person_id != past_log_person.id).order_by(Task.priority).all()
     return render_template('task_list.html', tasks=tasks, person_name=None)
 
 # 担当者別タスクの取得
@@ -248,7 +232,13 @@ def person_tasks(person_id):
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     person = Person.query.get_or_404(person_id)
-    tasks = Task.query.filter_by(person_id=person_id).order_by(Task.priority).all()
+    sort_option = request.args.get('sort', 'priority')
+    if sort_option == 'follow_up_date':
+        tasks = Task.query.filter_by(person_id=person_id).order_by(
+            nulls_last(Task.follow_up_date.asc())
+        ).all()
+    else:
+        tasks = Task.query.filter_by(person_id=person_id).order_by(Task.priority).all()
     return render_template('task_list.html', tasks=tasks, person_name=person.name)
 
 # タスクの順序更新
@@ -329,18 +319,23 @@ def add_task():
     if request.method == 'POST':
         content = request.form['content']
         person_id = request.form.get('person_id')
+        follow_up_date_str = request.form.get('follow_up_date')
+        if follow_up_date_str:
+            follow_up_date = datetime.strptime(follow_up_date_str, '%Y-%m-%d')
+        else:
+            follow_up_date = None
         min_priority = db.session.query(db.func.min(Task.priority)).scalar()
         if min_priority is None:
             min_priority = 0
         else:
             min_priority -= 1
-        new_task = Task(content=content, person_id=person_id, priority=min_priority)
+        new_task = Task(content=content, person_id=person_id, priority=min_priority, follow_up_date=follow_up_date)
         db.session.add(new_task)
         db.session.commit()
         return redirect(url_for('index'))
     return render_template('add_task.html', people=people)
 
-# タスクの編集時にJSTに変換
+# タスクの編集
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_task(id):
     if not session.get('logged_in'):
@@ -350,7 +345,12 @@ def edit_task(id):
     if request.method == 'POST':
         task.content = request.form['content']
         task.person_id = request.form.get('person_id')
-        
+        follow_up_date_str = request.form.get('follow_up_date')
+        if follow_up_date_str:
+            task.follow_up_date = datetime.strptime(follow_up_date_str, '%Y-%m-%d')
+        else:
+            task.follow_up_date = None
+
         # チェックボックスの値を取得し、優先度を最も高くする
         if 'priority' in request.form:
             min_priority = db.session.query(db.func.min(Task.priority)).scalar()
@@ -372,6 +372,15 @@ def format_datetime_jst(value):
         return '未更新'
     jst_time = convert_to_jst(value)
     return jst_time.strftime('%Y年%m月%d日 %H:%M')
+
+# フォロー日を表示するためのフィルタを追加
+@app.template_filter('format_date')
+def format_date(value):
+    if value:
+        jst_time = convert_to_jst(value)
+        return jst_time.strftime('%Y年%m月%d日')
+    else:
+        return '未設定'
 
 # ファイルサイズをフォーマットするフィルタを追加
 @app.template_filter('filesizeformat')
@@ -428,15 +437,15 @@ def upload_file():
             file.save(filepath)
             filesize = os.path.getsize(filepath)  # ファイルサイズを取得
             file_url = url_for('uploaded_file', filename=filename, _external=True)
-            
+
             # ファイル情報をデータベースに保存
             new_file = Upload(filename=filename, filepath=filepath, filesize=filesize, url=file_url)
             db.session.add(new_file)
             db.session.commit()
-            
+
             flash('ファイルが正常にアップロードされました')
             return redirect(url_for('upload_file'))
-    
+
     files = Upload.query.all()
     return render_template('upload.html', files=files)
 
@@ -464,7 +473,7 @@ def delete_file(id):
             flash(f'ファイルの削除中にエラーが発生しました: {e}')
     else:
         flash('データベースにファイルが見つかりませんでした。')
-    
+
     return redirect(url_for('upload_file'))
 
 # robots.txtの設定（検索エンジンによるインデックスを防止）
