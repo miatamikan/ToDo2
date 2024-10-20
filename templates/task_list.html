@@ -49,24 +49,23 @@
 
     /* 担当者、最終更新日、フォロー日の情報を囲むスタイル */
     .task-info-box {
+        padding: 8px 19px;
         margin: 2em 0;
+        color: #2c2c2f;
         position: relative;
-        padding: 0.5em 1.5em;
-        border-top: solid 2px black;
-        border-bottom: solid 2px black;
     }
     .task-info-box:before, .task-info-box:after {
         content: '';
         position: absolute;
-        top: -10px;
-        width: 2px;
-        height: calc(100% + 20px);
-        background-color: black;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: white;
     }
     .task-info-box:before {
-        left: 10px;
+        top: 0;
     }
     .task-info-box:after {
-        right: 10px;
+        bottom: 0;
     }
 </style>
