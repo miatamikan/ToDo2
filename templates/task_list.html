@@ -92,26 +92,13 @@
         color: white;
     }
 
-    /* 担当者、最終更新日、フォロー日の情報を囲むスタイル */
+    /* シンプルなスタイルに変更 */
     .task-info-box {
         padding: 8px 19px;
         margin: 2em 0;
         color: white;
-        position: relative;
         text-align: left;
-    }
-    .task-info-box:before, .task-info-box:after {
-        content: '';
-        position: absolute;
-        width: calc(100% - 40px); /* 左右の余白を考慮 */
-        height: 2px; /* ラインを太めに */
-        background: white;
-        left: 20px; /* 左のマージン */
-    }
-    .task-info-box:before {
-        top: 0;
-    }
-    .task-info-box:after {
-        bottom: 0;
+        background: none;
+        border: none;
     }
 </style>
