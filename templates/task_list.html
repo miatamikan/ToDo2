@@ -32,7 +32,52 @@
 </div>
 
 <script>
-    // JavaScriptのコードはそのまま
+    // 各タスクの高さを計測して、必要に応じて折りたたみボタンを表示
+    document.querySelectorAll('.task-item').forEach(function(taskItem) {
+        var contentDiv = taskItem.querySelector('.task-content');
+        var toggleButton = taskItem.querySelector('.btn-toggle-task');
+
+        // 400px以上の高さのタスクに対して折りたたみボタンを表示
+        if (contentDiv.scrollHeight > 400) {
+            toggleButton.style.display = 'block';  // ボタンを表示
+
+            // 折りたたみ/展開処理
+            toggleButton.addEventListener('click', function() {
+                if (contentDiv.style.maxHeight === '400px') {
+                    contentDiv.style.maxHeight = 'none';
+                    toggleButton.textContent = '折りたたむ';
+                } else {
+                    contentDiv.style.maxHeight = '400px';
+                    toggleButton.textContent = 'もっと見る';
+                }
+            });
+        }
+    });
+
+    var taskList = document.getElementById('task-list');
+    new Sortable(taskList, {
+        animation: 150,
+        onEnd: function (evt) {
+            let tasks = Array.from(taskList.children).map(task => task.dataset.taskId);
+            fetch('/update_task_order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({task_order: tasks})
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to update task order');
+                }
+                return response.json();
+            })
+            .then(data => console.log(data))
+            .catch(error => alert('タスクの順序更新に失敗しました: ' + error.message));
+        }
+    });
+
+    // タイトルの更新を担当者名で行う
+    document.title = "{{ person_name if person_name else 'タスク一覧' }}";  // ブラウザタブのタイトルも更新
 </script>
 
 <!-- カスタムスタイルを追加 -->
@@ -51,16 +96,17 @@
     .task-info-box {
         padding: 8px 19px;
         margin: 2em 0;
-        color: #2c2c2f;
+        color: white;
         position: relative;
+        text-align: left;
     }
     .task-info-box:before, .task-info-box:after {
         content: '';
         position: absolute;
-        left: 0;
-        right: 0;
-        height: 1px;
+        width: calc(100% - 40px); /* 左右の余白を考慮 */
+        height: 2px; /* ラインを太めに */
         background: white;
+        left: 20px; /* 左のマージン */
     }
     .task-info-box:before {
         top: 0;
