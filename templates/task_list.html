@@ -7,16 +7,12 @@
                 <div class="task-content" style="max-height: 400px; overflow: hidden;">
                     {{ task.content | safe }}
                 </div>
-                <!-- 担当者、最終更新日、フォロー日を囲むスタイルを追加 -->
-                <div class="task-info-box mt-3 p-2">
-                    {% if task.person %}
-                    <strong>担当者:</strong> {{ task.person.name }}<br>
-                    {% else %}
-                    <strong>担当者:</strong> 未割り当て<br>
-                    {% endif %}
-                    <strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}<br>
-                    <strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
-                </div>
+                {% if task.person %}
+                <br><strong>担当者:</strong> {{ task.person.name }}
+                {% else %}
+                <br><strong>担当者:</strong> 未割り当て
+                {% endif %}
+                <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
 
                 <!-- 折りたたみボタン（スタイルを青色に変更）-->
                 <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
@@ -37,7 +33,7 @@
         var contentDiv = taskItem.querySelector('.task-content');
         var toggleButton = taskItem.querySelector('.btn-toggle-task');
 
-        // 400px以上の高さのタスクに対して折りたたみボタンを表示
+        // 20行以上のタスクに対して折りたたみボタンを表示
         if (contentDiv.scrollHeight > 400) {
             toggleButton.style.display = 'block';  // ボタンを表示
 
@@ -90,15 +86,5 @@
     .btn-toggle-task:hover {
         background-color: #0056b3; /* ホバー時に少し濃い青色に変更 */
         color: white;
-    }
-
-    /* シンプルなスタイルに変更 */
-    .task-info-box {
-        padding: 8px 19px;
-        margin: 2em 0;
-        color: white;
-        text-align: left;
-        background: none;
-        border: none;
     }
 </style>
