@@ -25,13 +25,17 @@
                 {% endfor %}
             </select>
         </div>
+        <!-- フォロー日を追加 -->
+        <div class="form-group">
+            <label for="follow_up_date">フォロー日</label>
+            <input type="date" id="follow_up_date" name="follow_up_date" class="form-control" value="{% if task.follow_up_date %}{{ task.follow_up_date.strftime('%Y-%m-%d') }}{% endif %}">
+        </div>
         <button type="submit" class="btn btn-primary">更新</button>
         
         <div class="form-check">
-    <input type="checkbox" class="form-check-input" id="priority" name="priority">
-    <label class="form-check-label" for="priority">優先度を上げる</label>
-</div>
-
+            <input type="checkbox" class="form-check-input" id="priority" name="priority">
+            <label class="form-check-label" for="priority">優先度を上げる</label>
+        </div>
     </form>
 </div>
 </body>
