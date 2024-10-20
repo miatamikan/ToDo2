@@ -7,14 +7,16 @@
                 <div class="task-content" style="max-height: 400px; overflow: hidden;">
                     {{ task.content | safe }}
                 </div>
-                {% if task.person %}
-                <br><strong>担当者:</strong> {{ task.person.name }}
-                {% else %}
-                <br><strong>担当者:</strong> 未割り当て
-                {% endif %}
-                <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
-                <!-- フォロー日を表示 -->
-                <br><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
+                <!-- 担当者、最終更新日、フォロー日を囲むスタイルを追加 -->
+                <div class="task-info-box mt-3 p-2">
+                    {% if task.person %}
+                    <strong>担当者:</strong> {{ task.person.name }}<br>
+                    {% else %}
+                    <strong>担当者:</strong> 未割り当て<br>
+                    {% endif %}
+                    <strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}<br>
+                    <strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
+                </div>
 
                 <!-- 折りたたみボタン（スタイルを青色に変更）-->
                 <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
@@ -88,5 +90,14 @@
     .btn-toggle-task:hover {
         background-color: #0056b3; /* ホバー時に少し濃い青色に変更 */
         color: white;
+    }
+
+    /* 担当者、最終更新日、フォロー日の情報を囲むスタイル */
+    .task-info-box {
+        border: 1px solid #ccc;  /* 枠線の色をグレーに設定 */
+        border-radius: 8px;      /* 角を丸くする */
+        background-color: #f9f9f9; /* 背景色を薄いグレーに設定 */
+        padding: 10px;           /* 内側の余白を追加 */
+        margin-top: 10px;        /* 上部の余白を追加 */
     }
 </style>
