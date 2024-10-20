@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 import pytz
 from flask import send_from_directory
-from sqlalchemy import text, nulls_last  # nulls_lastを追加
+from sqlalchemy import text, nulls_last
 
 app = Flask(__name__)
 
@@ -67,6 +67,30 @@ def delete_db():
 @login_required  # ログインが必要なエンドポイント
 def delete_db_page():
     return render_template('delete_db.html')
+
+# データベース編集ページの表示
+@app.route('/db_edit', methods=['GET', 'POST'])
+@login_required  # ログインが必要なエンドポイント
+def db_edit():
+    result = None
+    error = None
+    if request.method == 'POST':
+        sql_query = request.form.get('sql_query')
+        try:
+            # SQLクエリを実行する
+            with db.engine.connect() as connection:
+                # text関数を使用してSQLクエリを実行
+                result_proxy = connection.execute(text(sql_query))
+                
+                if result_proxy.returns_rows:
+                    # 各列の結果をタプル形式に変換して、より分かりやすく表示
+                    result = [list(row) for row in result_proxy]
+                else:
+                    result = "Query executed successfully."
+        except Exception as e:
+            error = f"Error: {e}"
+    
+    return render_template('db_edit.html', result=result, error=error)
 
 # 日本標準時に変換する関数
 def convert_to_jst(utc_time):
