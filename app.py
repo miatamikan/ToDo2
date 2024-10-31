@@ -233,7 +233,9 @@ def index():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     people = Person.query.order_by(Person.order).all()
-    return render_template('index.html', people=people)
+    person_id = request.args.get('person_id')
+    sort_option = request.args.get('sort')
+    return render_template('index.html', people=people, person_id=person_id, sort_option=sort_option)
 
 # 全タスクの取得
 @app.route('/all_tasks')
@@ -248,7 +250,7 @@ def all_tasks():
         ).all()
     else:
         tasks = Task.query.filter(Task.person_id != past_log_person.id).order_by(Task.priority).all()
-    return render_template('task_list.html', tasks=tasks, person_name=None)
+    return render_template('task_list.html', tasks=tasks, person_name=None, person_id=None, sort_option=sort_option)
 
 # 担当者別タスクの取得
 @app.route('/person_tasks/<int:person_id>')
@@ -263,7 +265,7 @@ def person_tasks(person_id):
         ).all()
     else:
         tasks = Task.query.filter_by(person_id=person_id).order_by(Task.priority).all()
-    return render_template('task_list.html', tasks=tasks, person_name=person.name)
+    return render_template('task_list.html', tasks=tasks, person_name=person.name, person_id=person.id, sort_option=sort_option)
 
 # タスクの順序更新
 @app.route('/update_task_order', methods=['POST'])
@@ -366,6 +368,9 @@ def edit_task(id):
         return redirect(url_for('login'))
     task = Task.query.get_or_404(id)
     people = Person.query.order_by(Person.order).all()
+    person_id = request.args.get('person_id')
+    sort_option = request.args.get('sort')
+
     if request.method == 'POST':
         task.content = request.form['content']
         task.person_id = request.form.get('person_id')
@@ -386,8 +391,14 @@ def edit_task(id):
 
         task.update_last_updated()  # 最終更新日時の更新
         db.session.commit()
-        return redirect(url_for('index'))
-    return render_template('edit_task.html', task=task, people=people)
+
+        # リダイレクト先を設定
+        if person_id and person_id != 'None':
+            redirect_url = url_for('index', person_id=person_id, sort=sort_option)
+        else:
+            redirect_url = url_for('index', sort=sort_option)
+        return redirect(redirect_url)
+    return render_template('edit_task.html', task=task, people=people, person_id=person_id, sort_option=sort_option)
 
 # タスク一覧表示時にJSTに変換して表示
 @app.template_filter('format_datetime_jst')
@@ -433,7 +444,15 @@ def delete_task(id):
         db.session.delete(task)  # すでに過去ログなら完全削除
         db.session.commit()
         flash('タスクが完全に削除されました')
-    return redirect(url_for('index'))
+
+    # リダイレクト先を設定
+    person_id = request.args.get('person_id')
+    sort_option = request.args.get('sort')
+    if person_id and person_id != 'None':
+        redirect_url = url_for('index', person_id=person_id, sort=sort_option)
+    else:
+        redirect_url = url_for('index', sort=sort_option)
+    return redirect(redirect_url)
 
 @app.route('/past_log_tasks')
 def past_log_tasks():
