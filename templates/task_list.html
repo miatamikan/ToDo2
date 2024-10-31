@@ -1,6 +1,6 @@
 <div class="card mt-3">
     <div class="card-body">
-        <h4 id="task-title" class="card-title">{{ person_name if person_name else "タスク一覧" }}</h4>  <!-- タイトルに担当者名を表示 -->
+        <h4 id="task-title" class="card-title">{{ person_name if person_name else "タスク一覧" }}</h4>
         <ul id="task-list" class="list-group mt-3">
             {% for task in tasks %}
             <li class="list-group-item task-item" data-task-id="{{ task.id }}">
@@ -13,16 +13,15 @@
                 <br><strong>担当者:</strong> 未割り当て
                 {% endif %}
                 <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
-                <!-- フォロー日を表示 -->
                 <br><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
 
-                <!-- 折りたたみボタン（スタイルを青色に変更）-->
+                <!-- 折りたたみボタン -->
                 <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
 
-                <form method="POST" action="/delete/{{ task.id }}" style="display:inline;">
+                <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
                     <button type="submit" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</button>
                 </form>
-                <a href="/edit/{{ task.id }}" class="btn btn-sm btn-info float-right">編集</a>
+                <a href="/edit/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" class="btn btn-sm btn-info float-right">編集</a>
             </li>
             {% endfor %}
         </ul>
@@ -30,16 +29,14 @@
 </div>
 
 <script>
-    // 各タスクの高さを計測して、必要に応じて折りたたみボタンを表示
+    // 折りたたみ機能
     document.querySelectorAll('.task-item').forEach(function(taskItem) {
         var contentDiv = taskItem.querySelector('.task-content');
         var toggleButton = taskItem.querySelector('.btn-toggle-task');
 
-        // 400px以上の高さのタスクに対して折りたたみボタンを表示
         if (contentDiv.scrollHeight > 400) {
-            toggleButton.style.display = 'block';  // ボタンを表示
+            toggleButton.style.display = 'block';
 
-            // 折りたたみ/展開処理
             toggleButton.addEventListener('click', function() {
                 if (contentDiv.style.maxHeight === '400px') {
                     contentDiv.style.maxHeight = 'none';
@@ -74,19 +71,18 @@
         }
     });
 
-    // タイトルの更新を担当者名で行う
-    document.title = "{{ person_name if person_name else 'タスク一覧' }}";  // ブラウザタブのタイトルも更新
+    // タイトルの更新
+    document.title = "{{ person_name if person_name else 'タスク一覧' }}";
 </script>
 
-<!-- カスタムスタイルを追加 -->
+<!-- カスタムスタイル -->
 <style>
     .btn-toggle-task {
-        background-color: #007bff; /* 青色に設定 */
+        background-color: #007bff;
         color: white;
     }
-
     .btn-toggle-task:hover {
-        background-color: #0056b3; /* ホバー時に少し濃い青色に変更 */
+        background-color: #0056b3;
         color: white;
     }
 </style>
