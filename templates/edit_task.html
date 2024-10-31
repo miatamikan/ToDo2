@@ -10,8 +10,7 @@
 <div class="container mt-5">
     <h1>タスクを編集</h1>
     <a href="/" class="btn btn-secondary mb-3">トップページに戻る</a>
-    <form method="POST">
-        
+    <form method="POST" action="{{ url_for('edit_task', id=task.id, person_id=person_id, sort=sort_option) }}">
         <div class="form-group">
             <label for="content">タスクの内容</label>
             <textarea id="content" name="content" class="form-control" rows="20" required>{{ task.content }}</textarea>
@@ -30,12 +29,11 @@
             <label for="follow_up_date">フォロー日</label>
             <input type="date" id="follow_up_date" name="follow_up_date" class="form-control" value="{% if task.follow_up_date %}{{ task.follow_up_date.strftime('%Y-%m-%d') }}{% endif %}">
         </div>
-        <button type="submit" class="btn btn-primary">更新</button>
-        
         <div class="form-check">
             <input type="checkbox" class="form-check-input" id="priority" name="priority">
             <label class="form-check-label" for="priority">優先度を上げる</label>
         </div>
+        <button type="submit" class="btn btn-primary">更新</button>
     </form>
 </div>
 </body>
