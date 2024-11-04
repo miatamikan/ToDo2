@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 element.scrollIntoView({ behavior: 'smooth' });
                 // ハイライト効果を追加
                 element.classList.add('highlight');
-                // 3秒後にハイライトを消す
                 setTimeout(() => {
                     element.classList.remove('highlight');
                 }, 3000);
@@ -22,8 +21,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // タスクリンクのクリックイベントハンドラ
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('copy-task-link') || 
-            e.target.parentElement.classList.contains('copy-task-link')) {
+        if (e.target.classList.contains('task-link') || 
+            e.target.parentElement.classList.contains('task-link')) {
             e.preventDefault();
             const taskId = e.target.closest('.task-item').id;
             const fullUrl = window.location.origin + window.location.pathname + '#' + taskId;
@@ -31,18 +30,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // クリップボードにURLをコピー
             navigator.clipboard.writeText(fullUrl).then(() => {
                 // コピー成功時の視覚的フィードバック
-                const tooltip = document.createElement('div');
-                tooltip.className = 'copy-tooltip';
-                tooltip.textContent = 'URLをコピーしました！';
-                e.target.closest('.task-item').appendChild(tooltip);
+                const feedbackSpan = document.createElement('span');
+                feedbackSpan.className = 'copy-feedback';
+                feedbackSpan.textContent = 'URLをコピーしました';
+                e.target.closest('.task-item').appendChild(feedbackSpan);
                 
-                // 1秒後にツールチップを消す
                 setTimeout(() => {
-                    tooltip.remove();
+                    feedbackSpan.remove();
                 }, 1000);
-            }).catch(err => {
-                console.error('クリップボードへのコピーに失敗しました:', err);
-                alert('URLのコピーに失敗しました。');
             });
         }
     });
