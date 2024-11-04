@@ -1,0 +1,99 @@
+/* タスクアイテムのスタイル */
+.task-item {
+    position: relative;
+    scroll-margin-top: 100px;
+    transition: background-color 0.3s ease;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+/* ハイライト効果 */
+.task-item.highlight {
+    background-color: rgba(255, 255, 0, 0.2);
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+}
+
+/* タスクリンクのスタイル */
+.copy-task-link {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 10px;
+    color: #6c757d;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.copy-task-link:hover {
+    color: #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.copy-task-link i {
+    font-size: 14px;
+}
+
+/* ツールチップのスタイル */
+.copy-tooltip {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1000;
+    animation: fadeInOut 1s ease;
+}
+
+/* ツールチップのアニメーション */
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 10px);
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+    80% {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -10px);
+    }
+}
+
+/* タスクコンテンツのスタイル */
+.task-content {
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+/* タスク情報のスタイル */
+.task-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 8px;
+}
+
+.task-info span {
+    display: inline-flex;
+    align-items: center;
+}
+
+.task-info i {
+    margin-right: 5px;
+}
