@@ -1,6 +1,4 @@
-{% extends "base.html" %}
-
-{% block content %}
+{# タスクリスト部分のみを含むテンプレート #}
 <div class="card mt-3">
     <div class="card-body">
         <h4 class="card-title" id="task-title">
@@ -38,7 +36,7 @@
                         <i class="fas fa-link"></i>
                     </a>
 
-                    <div class="task-actions">
+                    <div class="task-actions float-end">
                         <button class="btn btn-sm btn-outline-secondary expand-btn">
                             もっと見る
                         </button>
@@ -61,4 +59,3 @@
         </div>
     </div>
 </div>
-{% endblock %}
