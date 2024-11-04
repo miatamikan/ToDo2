@@ -1,88 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
 <div class="card mt-3">
     <div class="card-body">
-        <h4 id="task-title" class="card-title">{{ person_name if person_name else "タスク一覧" }}</h4>
-        <ul id="task-list" class="list-group mt-3">
+        <h4 class="card-title" id="task-title">
+            {{ person_name if person_name else "タスク一覧" }}
+        </h4>
+
+        <div class="task-list">
             {% for task in tasks %}
-            <li class="list-group-item task-item" data-task-id="{{ task.id }}">
-                <div class="task-content" style="max-height: 400px; overflow: hidden;">
+            <div class="task-item" id="task-{{ task.id }}">
+                <div class="task-content">
                     {{ task.content | safe }}
                 </div>
-                {% if task.person %}
-                <br><strong>担当者:</strong> {{ task.person.name }}
-                {% else %}
-                <br><strong>担当者:</strong> 未割り当て
-                {% endif %}
-                <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
-                <br><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
 
-                <!-- 折りたたみボタン -->
-                <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
+                <div class="task-info">
+                    <span class="task-person">
+                        <i class="fas fa-user"></i>
+                        {% if task.person %}
+                            {{ task.person.name }}
+                        {% else %}
+                            未割り当て
+                        {% endif %}
+                    </span>
 
-                <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
-                    <button type="submit" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</button>
-                </form>
-                <a href="/edit/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" class="btn btn-sm btn-info float-right">編集</a>
-            </li>
+                    <span class="task-update">
+                        <i class="fas fa-clock"></i>
+                        {{ task.last_updated | format_datetime_jst }}
+                    </span>
+
+                    <span class="task-follow">
+                        <i class="fas fa-calendar"></i>
+                        {{ task.follow_up_date | format_date }}
+                    </span>
+
+                    <a class="copy-task-link" title="このタスクへのリンクをコピー">
+                        <i class="fas fa-link"></i>
+                    </a>
+
+                    <div class="task-actions">
+                        <button class="btn btn-sm btn-outline-secondary expand-btn">
+                            もっと見る
+                        </button>
+
+                        <form action="{{ url_for('delete_task', id=task.id, person_id=person_id, sort=sort_option) }}" 
+                              method="POST" 
+                              class="d-inline"
+                              onsubmit="return confirm('本当に削除しますか？');">
+                            <button type="submit" class="btn btn-sm btn-danger">削除</button>
+                        </form>
+
+                        <a href="{{ url_for('edit_task', id=task.id, person_id=person_id, sort=sort_option) }}" 
+                           class="btn btn-sm btn-info">
+                            編集
+                        </a>
+                    </div>
+                </div>
+            </div>
             {% endfor %}
-        </ul>
+        </div>
     </div>
 </div>
-
-<script>
-    // 折りたたみ機能
-    document.querySelectorAll('.task-item').forEach(function(taskItem) {
-        var contentDiv = taskItem.querySelector('.task-content');
-        var toggleButton = taskItem.querySelector('.btn-toggle-task');
-
-        if (contentDiv.scrollHeight > 400) {
-            toggleButton.style.display = 'block';
-
-            toggleButton.addEventListener('click', function() {
-                if (contentDiv.style.maxHeight === '400px') {
-                    contentDiv.style.maxHeight = 'none';
-                    toggleButton.textContent = '折りたたむ';
-                } else {
-                    contentDiv.style.maxHeight = '400px';
-                    toggleButton.textContent = 'もっと見る';
-                }
-            });
-        }
-    });
-
-    var taskList = document.getElementById('task-list');
-    new Sortable(taskList, {
-        animation: 150,
-        onEnd: function (evt) {
-            let tasks = Array.from(taskList.children).map(task => task.dataset.taskId);
-            fetch('/update_task_order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({task_order: tasks})
-            }).then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to update task order');
-                }
-                return response.json();
-            })
-            .then(data => console.log(data))
-            .catch(error => alert('タスクの順序更新に失敗しました: ' + error.message));
-        }
-    });
-
-    // タイトルの更新
-    document.title = "{{ person_name if person_name else 'タスク一覧' }}";
-</script>
-
-<!-- カスタムスタイル -->
-<style>
-    .btn-toggle-task {
-        background-color: #007bff;
-        color: white;
-    }
-    .btn-toggle-task:hover {
-        background-color: #0056b3;
-        color: white;
-    }
-</style>
+{% endblock %}
