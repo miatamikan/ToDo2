@@ -2,315 +2,93 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ToDoリスト</title>
-    <meta name="robots" content="noindex">
-    <!-- BootstrapとjQuery -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-    <!-- Font Awesomeアイコン -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <!-- Googleフォント -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+JP&display=swap" rel="stylesheet">
-    <style>
-        body {
-            background-color: #121212;
-            color: #e0e0e0;
-            font-family: 'Orbitron', sans-serif;
-        }
-        /* レイアウトをフレックスボックスに変更 */
-        .container-fluid {
-            display: flex;
-            flex-wrap: nowrap;
-            height: 100vh;
-            padding: 0;
-        }
-        .sidebar {
-            width: 15%;
-            background-color: #1f1f1f;
-            padding: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.5);
-            overflow-y: auto;
-        }
-        .main-content {
-            width: 85%;
-            padding: 40px;
-            overflow-y: auto;
-        }
-        /* スクロールバーのスタイル */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1f1f1f;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #3d3d3d;
-            border-radius: 4px;
-        }
-        /* サイドバーのスタイル */
-        .sidebar h3 {
-            color: #00bcd4;
-            margin-bottom: 30px;
-            font-family: 'Orbitron', sans-serif;
-        }
-        .list-group-item {
-            background-color: transparent;
-            border: none;
-            color: #e0e0e0;
-            padding: 10px 15px;
-            font-family: 'Orbitron', sans-serif;
-        }
-        .list-group-item:hover, .list-group-item.active {
-            background-color: #00bcd4;
-            color: #121212;
-        }
-        .sidebar-bottom-link {
-            margin-top: 20px;
-            text-align: center;
-        }
-        .sidebar-bottom-link .btn {
-            width: 100%;
-            background-color: #00bcd4;
-            color: #121212;
-            border: none;
-        }
-        /* ナビバーのスタイル */
-        .navbar {
-            background-color: #1f1f1f;
-            border-bottom: 1px solid #3d3d3d;
-        }
-        .navbar-brand {
-            font-size: 2em;
-            font-weight: bold;
-            color: #00bcd4;
-            text-shadow: 0 0 10px #00bcd4;
-        }
-        .nav-link {
-            color: #e0e0e0;
-        }
-        .nav-link:hover {
-            color: #00bcd4;
-        }
-        /* フローティングアクションボタン */
-        .floating-button {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background-color: #00bcd4;
-            color: #121212;
-            border: none;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 30px;
-            box-shadow: 0 5px 15px rgba(0,188,212,0.4);
-            transition: background-color 0.3s;
-        }
-        .floating-button:hover {
-            background-color: #0097a7;
-        }
-        /* 検索窓のスタイル */
-        #task-search {
-            background-color: #1f1f1f;
-            border: 1px solid #3d3d3d;
-            color: #e0e0e0;
-        }
-        #task-search::placeholder {
-            color: #757575;
-        }
-        /* ボタンのスタイル */
-        .btn-primary {
-            background-color: #00bcd4;
-            border: none;
-        }
-        .btn-primary:hover {
-            background-color: #0097a7;
-        }
-        /* タスクリストのスタイル */
-        #task-list li {
-            border-bottom: 1px solid #3d3d3d;
-            padding: 15px;
-            transition: background-color 0.3s;
-            color: #e0e0e0;
-        }
-        /* タスク行の交互色付け */
-        #task-list li:nth-child(odd) {
-            background-color: #1f1f1f;
-        }
-        #task-list li:nth-child(even) {
-            background-color: #2c2c2c;
-        }
-        /* ホバー時のスタイル */
-        #task-list li:hover {
-            background-color: #333333;
-            color: #e0e0e0;
-        }
-        /* メインコンテンツ内のタイトルの色を調整 */
-        #main-content-area h1, #main-content-area h2, #main-content-area h3, #main-content-area h4, #main-content-area h5, #main-content-area h6 {
-            color: #00bcd4;
-        }
-        /* <pre>タグのスタイルを追加 */
-        pre {
-            font-family: 'Noto Sans JP', 'ヒラギノ角ゴ Pro', 'メイリオ', '游ゴシック', 'Courier New', Courier, monospace;
-            font-size: 16px;
-            line-height: 1.6;
-            color: white;
-            padding: 15px;
-            overflow-x: auto;
-            white-space: pre-wrap;
-        }
-        /* サイドバーもスクロールできるように */
-        .sidebar, .main-content {
-            overflow-y: scroll;
-            height: 100vh;
-        }
-        .main-content::-webkit-scrollbar {
-            width: 8px;
-        }
-        .main-content::-webkit-scrollbar-thumb {
-            background: #3d3d3d;
-            border-radius: 4px;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDo2</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <!-- カスタムCSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/task-styles.css') }}">
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- タスクジャンプ機能のJS -->
+    <script src="{{ url_for('static', filename='js/task-jump.js') }}"></script>
 </head>
 <body>
-    <!-- ヘッダー -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <a class="navbar-brand" href="#">ToDo2</a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/logout">ログアウト</a>
-                </li>
-            </ul>
+    <!-- ナビゲーションバー -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">ToDo2</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">ログアウト</a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </nav>
+
     <div class="container-fluid">
-        <!-- サイドバー -->
-        <div class="sidebar">
-            <h3>INDEX</h3>
-            <ul id="person-list" class="list-group">
-                <li class="list-group-item">
-                    <a href="#" onclick="loadContent('/all_tasks')">全タスク</a>
-                </li>
-                {% for person in people %}
-                <li class="list-group-item" data-person-id="{{ person.id }}">
-                    <a href="#" onclick="loadContent('/person_tasks/{{ person.id }}')">{{ person.name }}</a>
-                </li>
-                {% endfor %}
-            </ul>
-            <div class="sidebar-bottom-link">
-                <a href="/edit_person" class="btn">Person Edit</a>
+        <div class="row">
+            <!-- サイドバー -->
+            <div class="col-md-3 col-lg-2 sidebar">
+                <div class="position-sticky pt-3">
+                    <h3>INDEX</h3>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a href="#" onclick="loadContent('/all_tasks')" class="nav-link">全タスク</a>
+                        </li>
+                        {% for person in people %}
+                        <li class="nav-item">
+                            <a href="#" onclick="loadContent('/person_tasks/{{ person.id }}')" class="nav-link">
+                                {{ person.name }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="sidebar-bottom-link mt-3">
+                        <a href="{{ url_for('edit_person') }}" class="btn btn-outline-primary">Person Edit</a>
+                    </div>
+                </div>
             </div>
-        </div>
-        <!-- メインコンテンツ -->
-        <div class="main-content">
-            <!-- 検索窓 -->
-            <input type="text" id="task-search" class="form-control mb-3" placeholder="タスクを検索">
-            <!-- 並び替えオプションを追加 -->
-            <div class="form-group">
-                <label for="sort-option">並び替え:</label>
-                <select id="sort-option" class="form-control">
-                    <option value="priority">優先度順</option>
-                    <option value="follow_up_date">フォロー日が近い順</option>
-                </select>
-            </div>
-            <div id="main-content-area" class="mt-4">
-                <!-- デフォルトの全タスク一覧をここにロードします -->
-            </div>
-            <!-- タスク追加ボタン -->
-            <div class="mt-2">
-                <a href="/add" class="btn btn-primary">新規登録</a>
+
+            <!-- メインコンテンツ -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <div class="form-group mt-3">
+                    <div class="btn-group" role="group" aria-label="並び替え">
+                        <button type="button" class="btn btn-outline-secondary" onclick="loadContent(currentPath)">
+                            優先度順
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="loadContent(currentPath + '?sort=follow_up_date')">
+                            フォロー日が近い順
+                        </button>
+                    </div>
+                </div>
+
+                <div id="main-content-area" class="mt-4">
+                    <!-- タスクリストがここに動的に読み込まれます -->
+                </div>
+
+                <div class="mt-2">
+                    <a href="{{ url_for('add_task') }}" class="btn btn-primary">新規登録</a>
+                </div>
             </div>
         </div>
     </div>
-    <!-- フローティングアクションボタン -->
-    <a href="/add" class="floating-button"><i class="fas fa-plus"></i></a>
-    <!-- JavaScriptコード -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Sortable.js -->
-    <script src="{{ url_for('static', filename='js/Sortable.min.js') }}"></script>
-    <script>
-        // コンテンツをロードする関数
-        function loadContent(url) {
-            let sortOption = document.getElementById('sort-option').value;
-            let fullUrl = url + '?sort=' + sortOption;
-            $.get(fullUrl, function(data) {
-                $("#main-content-area").html(data);
-                let newTitle = $("#task-title").text();
-                document.title = newTitle;
 
-                // スクロール位置をリセットする
-                $(".main-content").scrollTop(0);
-
-                // 検索機能を再適用
-                applySearchFilter();
-
-                // 現在表示中のURLをデータ属性に保存
-                $('#main-content-area').data('current-url', url);
-            });
-        }
-
-        // 検索機能
-        function applySearchFilter() {
-            let filter = document.getElementById('task-search').value.trim().toLowerCase();
-            let keywords = filter.split(/\s+/);
-            let tasks = document.querySelectorAll('#task-list li');
-            tasks.forEach(task => {
-                let taskText = task.textContent.toLowerCase();
-                let match = keywords.every(keyword => taskText.includes(keyword));
-                task.style.display = match ? '' : 'none';
-            });
-        }
-        document.getElementById('task-search').addEventListener('input', applySearchFilter);
-
-        // サイドバーの担当者リストをソート可能に
-        var personList = document.getElementById('person-list');
-        new Sortable(personList, {
-            animation: 150,
-            onEnd: function (evt) {
-                let people = Array.from(personList.children)
-                    .filter(li => li.dataset.personId)
-                    .map(li => li.dataset.personId);
-                fetch('/update_person_order', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({person_order: people})
-                }).then(response => {
-                    if (!response.ok) {
-                        throw new Error('Failed to update person order');
-                    }
-                    return response.json();
-                })
-                .then(data => console.log(data))
-                .catch(error => alert('担当者の順序更新に失敗しました: ' + error.message));
-            }
-        });
-
-        // 並び替えオプションが変更されたときに再読み込み
-        document.getElementById('sort-option').addEventListener('change', function() {
-            let currentUrl = $('#main-content-area').data('current-url');
-            if (!currentUrl) {
-                currentUrl = '/all_tasks';
-            }
-            loadContent(currentUrl);
-        });
-
-        // ページ読み込み時に初期コンテンツをロード
-        $(document).ready(function() {
-            let params = new URLSearchParams(window.location.search);
-            let personId = params.get('person_id');
-            let sortOption = params.get('sort') || 'priority';
-            document.getElementById('sort-option').value = sortOption;
-            let initialUrl;
-            if (personId) {
-                initialUrl = '/person_tasks/' + personId;
-            } else {
-                initialUrl = '/all_tasks';
-            }
-            loadContent(initialUrl);
-        });
-    </script>
+    <!-- 新規タスク追加用の浮動ボタン -->
+    <a href="{{ url_for('add_task') }}" class="floating-button">
+        <i class="fas fa-plus"></i>
+    </a>
 </body>
 </html>
