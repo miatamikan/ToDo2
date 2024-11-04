@@ -1,61 +1,22 @@
-{# タスクリスト部分のみを含むテンプレート #}
-<div class="card mt-3">
-    <div class="card-body">
-        <h4 class="card-title" id="task-title">
-            {{ person_name if person_name else "タスク一覧" }}
-        </h4>
+:::: {.card .mt-3}
+::: card-body
+#### {{ person_name if person_name else "タスク一覧" }} {#task-title .card-title}
 
-        <div class="task-list">
-            {% for task in tasks %}
-            <div class="task-item" id="task-{{ task.id }}">
-                <div class="task-content">
-                    {{ task.content | safe }}
-                </div>
+-   {% for task in tasks %}
 
-                <div class="task-info">
-                    <span class="task-person">
-                        <i class="fas fa-user"></i>
-                        {% if task.person %}
-                            {{ task.person.name }}
-                        {% else %}
-                            未割り当て
-                        {% endif %}
-                    </span>
+-   ::: {.task-content id="task-{{ task.id }}" style="max-height: 400px; overflow: hidden;"}
+    {{ task.content | safe }}
+    :::
 
-                    <span class="task-update">
-                        <i class="fas fa-clock"></i>
-                        {{ task.last_updated | format_datetime_jst }}
-                    </span>
-
-                    <span class="task-follow">
-                        <i class="fas fa-calendar"></i>
-                        {{ task.follow_up_date | format_date }}
-                    </span>
-
-                    <a class="copy-task-link" title="このタスクへのリンクをコピー">
-                        <i class="fas fa-link"></i>
-                    </a>
-
-                    <div class="task-actions float-end">
-                        <button class="btn btn-sm btn-outline-secondary expand-btn">
-                            もっと見る
-                        </button>
-
-                        <form action="{{ url_for('delete_task', id=task.id, person_id=person_id, sort=sort_option) }}" 
-                              method="POST" 
-                              class="d-inline"
-                              onsubmit="return confirm('本当に削除しますか？');">
-                            <button type="submit" class="btn btn-sm btn-danger">削除</button>
-                        </form>
-
-                        <a href="{{ url_for('edit_task', id=task.id, person_id=person_id, sort=sort_option) }}" 
-                           class="btn btn-sm btn-info">
-                            編集
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
+    {% if task.person %}
+    **担当者:** {{ task.person.name }} {% else %}
+    **担当者:** 未割り当て {% endif %}
+    **最終更新日:** {{ task.last_updated | format_datetime_jst }}
+    **フォロー日:** {{ task.follow_up_date | format_date }}
+    <a href="#" class="task-link" title="このタスクへのリンク" style="margin-left: 8px;"><i class="fas fa-link"></i></a>
+    もっと見る
+    削除
+    [編集](/edit/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}){.btn .btn-sm .btn-info .float-right}
+    {% endfor %}
+:::
+::::
