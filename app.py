@@ -8,6 +8,10 @@ import pytz
 from flask import send_from_directory
 from sqlalchemy import text, nulls_last
 from werkzeug.utils import secure_filename
+import re
+import unicodedata
+from flask import request
+
 
 
 app = Flask(__name__)
@@ -146,6 +150,34 @@ db = SQLAlchemy(app)  # これが必要
 # ファイルサイズと全体容量の制限を設定
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 MAX_TOTAL_SIZE = 900 * 1024 * 1024  # 900MB
+
+
+def japanese_secure_filename(filename):
+    """
+    日本語を含むファイル名を安全に処理する関数。
+    """
+    filename = unicodedata.normalize('NFKC', filename)
+    # ファイル名と拡張子を分割
+    filename = filename.strip().replace('\x00', '')  # NULLバイトを削除
+    # ファイル名から許可された文字だけを残す
+    allowed_chars = re.compile(r'[^A-Za-z0-9一-龥ぁ-んァ-ンー_.\-()（） ]')
+    filename = allowed_chars.sub('', filename)
+    return filename
+
+
+def get_unique_filename(directory, filename):
+    """
+    指定されたディレクトリ内で重複しないファイル名を取得する。
+    """
+    base, extension = os.path.splitext(filename)
+    counter = 1
+    unique_filename = filename
+    while os.path.exists(os.path.join(directory, unique_filename)):
+        unique_filename = f"{base}({counter}){extension}"
+        counter += 1
+    return unique_filename
+
+
 
 def get_total_upload_size():
     total_size = db.session.query(db.func.sum(Upload.filesize)).scalar()
@@ -412,7 +444,8 @@ def add_task():
                 if get_total_upload_size() + file_length > MAX_TOTAL_SIZE:
                     flash('全体の容量が900MBを超えるため、アップロードできません。')
                     break
-                filename = secure_filename(file.filename)
+                filename = japanese_secure_filename(file.filename)
+                filename = get_unique_filename(UPLOAD_DIR, filename)
                 filepath = os.path.join(UPLOAD_DIR, filename)
                 file.save(filepath)
                 filesize = os.path.getsize(filepath)
@@ -470,7 +503,8 @@ def edit_task(id):
                 if get_total_upload_size() + file_length > MAX_TOTAL_SIZE:
                     flash('全体の容量が900MBを超えるため、アップロードできません。')
                     break
-                filename = secure_filename(file.filename)
+                filename = japanese_secure_filename(file.filename)
+                filename = get_unique_filename(UPLOAD_DIR, filename)
                 filepath = os.path.join(UPLOAD_DIR, filename)
                 file.save(filepath)
                 filesize = os.path.getsize(filepath)
@@ -486,6 +520,7 @@ def edit_task(id):
             redirect_url = url_for('index', sort=sort_option)
         return redirect(redirect_url)
     return render_template('edit_task.html', task=task, people=people, person_id=person_id, sort_option=sort_option)
+
 
 
 
@@ -587,7 +622,8 @@ def upload_file():
                 flash('全体の容量が900MBを超えるため、アップロードできません。')
                 return redirect(request.url)
 
-            filename = secure_filename(file.filename)
+            filename = japanese_secure_filename(file.filename)
+            filename = get_unique_filename(UPLOAD_DIR, filename)
             filepath = os.path.join(UPLOAD_DIR, filename)
             file.save(filepath)
             filesize = os.path.getsize(filepath)
@@ -606,6 +642,7 @@ def upload_file():
 
     files = Upload.query.all()
     return render_template('upload.html', files=files)
+
 
 
 
@@ -635,7 +672,9 @@ def delete_file(id):
     else:
         flash('データベースにファイルが見つかりませんでした。')
 
-    return redirect(url_for('upload_file'))
+    # 元のページにリダイレクト
+    return redirect(request.referrer or url_for('upload_file'))
+
 
 
 # robots.txtの設定（検索エンジンによるインデックスを防止）
