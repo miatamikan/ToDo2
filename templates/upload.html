@@ -64,30 +64,15 @@
             width: 100%;
         }
 
-        .uploaded-files ul {
-            list-style-type: none;
-            padding: 0;
+        .uploaded-files table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .uploaded-files li {
-            background: #f9f9f9;
-            padding: 15px;
-            margin: 10px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .uploaded-files a {
-            text-decoration: none;
-            color: #007bff;
-            transition: color 0.3s;
-        }
-
-        .uploaded-files a:hover {
-            color: #0056b3;
+        .uploaded-files th, .uploaded-files td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
         }
 
         .thumbnail {
@@ -143,6 +128,11 @@
                     const file = items[i].getAsFile();
                     const formData = new FormData();
                     formData.append('file', file);
+
+                    // タスクIDを取得して送信
+                    const taskId = document.getElementById('task_id').value;
+                    formData.append('task_id', taskId);
+
                     uploadImage(formData);
                 }
             }
@@ -187,35 +177,52 @@
 <body>
     <div class="container">
         <h1>ファイルをアップロード</h1>
-        
         <form method="POST" enctype="multipart/form-data" action="/upload">
+            <!-- タスクIDの入力フィールドを追加 -->
+            <div>
+                <label for="task_id">タスクID（任意）:</label>
+                <input type="text" id="task_id" name="task_id" placeholder="タスクIDを入力">
+            </div>
             <input type="file" name="file" required>
             <input type="submit" value="アップロード">
         </form>
 
         <div class="uploaded-files">
             <h2>アップロードされたファイル</h2>
-            <ul>
-                {% for file in files[::-1] %}
-                <li>
-                    <div>
-                        {% if file.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
-                        <img src="{{ file.url }}" alt="Thumbnail" class="thumbnail">
-                        {% endif %}
-                        <a href="{{ file.url }}" target="_blank"><i class="fas fa-file-alt"></i> {{ file.filename }}</a>
-                        <div class="file-info">
-                            アップロード日時: {{ file.upload_time|format_datetime_jst }}, ファイルサイズ: {{ file.filesize|filesizeformat }}
-                        </div>
-                    </div>
-                    <div class="action-buttons">
-                        <button onclick="copyToClipboard('{{ file.url }}')"><i class="fas fa-copy"></i> URLコピー</button>
-                        <form action="{{ url_for('delete_file', id=file.id) }}" method="POST" style="display:inline;">
-                            <button type="submit" class="delete" onclick="return confirm('このファイルを削除してもよろしいですか？')"><i class="fas fa-trash-alt"></i> 削除</button>
-                        </form>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
+            <table>
+                <thead>
+                    <tr>
+                        <th>タスクID</th>
+                        <th>ファイル名</th>
+                        <th>サイズ</th>
+                        <th>アップロード日時</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files[::-1] %}
+                    <tr>
+                        <td>{{ file.task_id if file.task_id else 'なし' }}</td>
+                        <td>
+                            {% if file.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+                            <img src="{{ file.url }}" alt="Thumbnail" class="thumbnail">
+                            {% endif %}
+                            <a href="{{ file.url }}" target="_blank">{{ file.filename }}</a>
+                        </td>
+                        <td>{{ file.filesize|filesizeformat }}</td>
+                        <td>{{ file.upload_time|format_datetime_jst }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button onclick="copyToClipboard('{{ file.url }}')"><i class="fas fa-copy"></i> URLコピー</button>
+                                <form action="{{ url_for('delete_file', id=file.id) }}" method="POST" style="display:inline;">
+                                    <button type="submit" class="delete" onclick="return confirm('このファイルを削除してもよろしいですか？')"><i class="fas fa-trash-alt"></i> 削除</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </body>
