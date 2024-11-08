@@ -15,17 +15,37 @@
                 {% endif %}
                 <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
                 <br><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
+                
                 <!-- 添付ファイルを表示 -->
                 {% if task.uploads %}
                 <br><strong>添付ファイル:</strong>
-                <ul>
+                <ul class="list-unstyled">
                     {% for upload in task.uploads %}
-                    <li><a href="{{ upload.url }}">{{ upload.filename }}</a></li>
+                    <li class="mb-2">
+                        <div class="d-flex align-items-center">
+                            {% if upload.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+                            <img src="{{ upload.url }}" alt="Thumbnail" class="thumbnail mr-2">
+                            {% endif %}
+                            <a href="{{ upload.url }}" target="_blank">{{ upload.filename }}</a>
+                        </div>
+                        <div class="file-actions mt-1">
+                            <button class="btn btn-sm btn-primary mr-2" onclick="copyToClipboard('{{ upload.url }}')">
+                                <i class="fas fa-copy"></i> URLコピー
+                            </button>
+                            <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('このファイルを削除してもよろしいですか？');">
+                                    <i class="fas fa-trash-alt"></i> 削除
+                                </button>
+                            </form>
+                        </div>
+                        <div class="file-info">
+                            <small>アップロード日時: {{ upload.upload_time | format_datetime_jst }}, ファイルサイズ: {{ upload.filesize | filesizeformat }}</small>
+                        </div>
+                    </li>
                     {% endfor %}
                 </ul>
                 {% endif %}
-                <!-- 折りたたみボタン -->
-                <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
+                
                 <!-- 削除ボタンと編集ボタン -->
                 <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
                     <button type="submit" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</button>
@@ -83,6 +103,15 @@
 
     // ページタイトルの更新
     document.title = "{{ person_name if person_name else 'タスク一覧' }}";
+
+    // URLコピー機能
+    function copyToClipboard(url) {
+        navigator.clipboard.writeText(url).then(function() {
+            alert('URLがクリップボードにコピーされました');
+        }, function(err) {
+            alert('コピーに失敗しました: ' + err);
+        });
+    }
 </script>
 
 <!-- カスタムスタイル -->
@@ -94,5 +123,22 @@
     .btn-toggle-task:hover {
         background-color: #0056b3;
         color: white;
+    }
+    .thumbnail {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        margin-right: 10px;
+        transition: transform 0.3s ease;
+        border-radius: 5px;
+    }
+    .thumbnail:hover {
+        transform: scale(2);
+    }
+    .file-actions .btn {
+        font-size: 0.8em;
+    }
+    .file-info {
+        color: #aaa;
     }
 </style>
