@@ -1,187 +1,90 @@
-{% extends "task_list.html" %}
-
-{% block content %}
-<div class="w-full max-w-4xl mx-auto p-4">
-  <div class="card">
-    <div class="card-header">
-      <h4 class="card-title text-xl font-semibold">{{ person_name if person_name else "タスク一覧" }}</h4>
-    </div>
+<div class="card mt-3">
     <div class="card-body">
-      <ul id="task-list" class="space-y-4" data-sortable="true">
-        {% for task in tasks %}
-        <li id="task-{{ task.id }}" class="task-item border rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow" data-task-id="{{ task.id }}">
-          <div class="p-4">
-            <!-- タスク本文 -->
-            <div class="task-content prose max-w-none {% if not task.expanded %}max-h-40{% endif %} overflow-hidden">
-              {{ task.content | safe }}
-            </div>
-            
-            <!-- もっと見るボタン -->
-            {% if task.content|length > 400 %}
-            <button onclick="toggleContent({{ task.id }})" class="btn-toggle-task mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
-              もっと見る
-            </button>
-            {% endif %}
-
-            <!-- メタ情報 -->
-            <div class="mt-4 text-sm text-gray-600 space-y-1">
-              <div>
-                <strong>担当者:</strong> 
-                {% if task.person %}
-                  {{ task.person.name }}
-                {% else %}
-                  未割り当て
-                {% endif %}
-              </div>
-              <div><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}</div>
-              <div><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}</div>
-            </div>
-
-            <!-- 添付ファイル -->
-            {% if task.uploads %}
-            <div class="mt-4">
-              <div class="text-sm font-medium text-gray-700 mb-2">
-                <i class="fas fa-paperclip mr-1"></i>添付ファイル
-              </div>
-              <div class="space-y-2">
-                {% for upload in task.uploads %}
-                <div class="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                  <div class="flex items-center space-x-2">
-                    {% if upload.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
-                      <i class="fas fa-image text-gray-500"></i>
-                    {% else %}
-                      <i class="fas fa-file text-gray-500"></i>
-                    {% endif %}
-                    <a href="{{ upload.url }}" target="_blank" class="text-sm hover:text-blue-600">
-                      {{ upload.filename }}
-                    </a>
-                    <span class="text-xs text-gray-500">
-                      ({{ upload.filesize | filesizeformat }})
-                    </span>
-                  </div>
-                  <div class="flex space-x-2">
-                    <button onclick="copyFileUrl('{{ upload.url }}')" 
-                            class="p-1 text-gray-500 hover:text-blue-600 transition-colors" 
-                            title="URLをコピー">
-                      <i class="fas fa-copy"></i>
-                    </button>
-                    <form method="POST" 
-                          action="{{ url_for('delete_file', id=upload.id) }}" 
-                          style="display:inline;"
-                          onsubmit="return confirm('本当にファイルを削除しますか？')">
-                      <button type="submit" 
-                              class="p-1 text-gray-500 hover:text-red-600 transition-colors"
-                              title="削除">
-                        <i class="fas fa-trash-alt"></i>
-                      </button>
-                    </form>
-                  </div>
+        <h4 id="task-title" class="card-title">{{ person_name if person_name else "タスク一覧" }}</h4>
+        <ul id="task-list" class="list-group mt-3">
+            {% for task in tasks %}
+            <!-- data-task-id 属性を使用 -->
+            <li id="task-{{ task.id }}" class="list-group-item task-item" data-task-id="{{ task.id }}">
+                <div class="task-content" style="max-height: 400px; overflow: hidden;">
+                    {{ task.content | safe }}
                 </div>
-                {% endfor %}
-              </div>
-            </div>
-            {% endif %}
-
-            <!-- アクションボタン -->
-            <div class="mt-4 flex justify-end space-x-2">
-              <a href="{{ url_for('edit_task', id=task.id, person_id=person_id, sort=sort_option) }}" 
-                 class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
-                編集
-              </a>
-              <form method="POST" 
-                    action="{{ url_for('delete_task', id=task.id, person_id=person_id, sort=sort_option) }}" 
-                    style="display:inline;"
-                    onsubmit="return confirm('本当に削除しますか？')">
-                <button type="submit" 
-                        class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
-                  削除
-                </button>
-              </form>
-            </div>
-          </div>
-        </li>
-        {% endfor %}
-      </ul>
+                {% if task.person %}
+                <br><strong>担当者:</strong> {{ task.person.name }}
+                {% else %}
+                <br><strong>担当者:</strong> 未割り当て
+                {% endif %}
+                <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
+                <br><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
+                
+                <!-- 添付ファイルを表示 -->
+                {% if task.uploads %}
+                <br><strong>添付ファイル:</strong>
+                <ul class="list-unstyled">
+                    {% for upload in task.uploads %}
+                    <li class="mb-2">
+                        <div class="d-flex align-items-center">
+                            {% if upload.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+                            <img src="{{ upload.url }}" alt="Thumbnail" class="thumbnail mr-2">
+                            {% endif %}
+                            <a href="{{ upload.url }}" target="_blank">{{ upload.filename }}</a>
+                        </div>
+                        <div class="file-actions mt-1">
+                            <button class="btn btn-sm btn-primary mr-2" onclick="copyToClipboard('{{ upload.url }}')">
+                                <i class="fas fa-copy"></i> URLコピー
+                            </button>
+                            <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('このファイルを削除してもよろしいですか？');">
+                                    <i class="fas fa-trash-alt"></i> 削除
+                                </button>
+                            </form>
+                        </div>
+                        <div class="file-info">
+                            <small>アップロード日時: {{ upload.upload_time | format_datetime_jst }}, ファイルサイズ: {{ upload.filesize | filesizeformat }}</small>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                
+                <!-- 折りたたみボタン -->
+                <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
+                
+                <!-- 削除ボタンと編集ボタン -->
+                <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</button>
+                </form>
+                <a href="/edit/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" class="btn btn-sm btn-info float-right">編集</a>
+            </li>
+            {% endfor %}
+        </ul>
     </div>
-  </div>
 </div>
 
-<!-- JavaScript -->
-<script>
-// タスクの折りたたみ機能
-function toggleContent(taskId) {
-  const contentDiv = document.querySelector(`#task-${taskId} .task-content`);
-  const toggleButton = document.querySelector(`#task-${taskId} .btn-toggle-task`);
-  
-  if (contentDiv.classList.contains('max-h-40')) {
-    contentDiv.classList.remove('max-h-40');
-    toggleButton.textContent = '折りたたむ';
-  } else {
-    contentDiv.classList.add('max-h-40');
-    toggleButton.textContent = 'もっと見る';
-  }
-}
-
-// URLコピー機能
-function copyFileUrl(url) {
-  navigator.clipboard.writeText(url)
-    .then(() => alert('URLをコピーしました'))
-    .catch(err => console.error('URLのコピーに失敗しました:', err));
-}
-
-// ドラッグ&ドロップでの並び替え
-document.addEventListener('DOMContentLoaded', function() {
-  const taskList = document.getElementById('task-list');
-  if (taskList && taskList.dataset.sortable === 'true') {
-    new Sortable(taskList, {
-      animation: 150,
-      onEnd: function(evt) {
-        const tasks = Array.from(taskList.children).map(task => task.dataset.taskId);
-        fetch('/update_task_order', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({task_order: tasks})
-        })
-        .then(response => {
-          if (!response.ok) throw new Error('Failed to update task order');
-          return response.json();
-        })
-        .then(data => console.log('Task order updated:', data))
-        .catch(error => {
-          console.error('Error updating task order:', error);
-          alert('タスクの順序更新に失敗しました');
-        });
-      }
-    });
-  }
-});
-</script>
-
-<!-- スタイル -->
+<!-- カスタムスタイル -->
 <style>
-.task-content {
-  transition: max-height 0.3s ease-out;
-}
-
-.btn-toggle-task {
-  cursor: pointer;
-}
-
-.task-item {
-  transition: all 0.3s ease;
-}
-
-.task-item:hover {
-  transform: translateY(-1px);
-}
-
-.thumbnail {
-  max-width: 50px;
-  max-height: 50px;
-  object-fit: cover;
-  border-radius: 4px;
-}
+    .btn-toggle-task {
+        background-color: #007bff;
+        color: white;
+    }
+    .btn-toggle-task:hover {
+        background-color: #0056b3;
+        color: white;
+    }
+    .thumbnail {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        margin-right: 10px;
+        transition: transform 0.3s ease;
+        border-radius: 5px;
+    }
+    .thumbnail:hover {
+        transform: scale(2);
+    }
+    .file-actions .btn {
+        font-size: 0.8em;
+    }
+    .file-info {
+        color: #aaa;
+    }
 </style>
-{% endblock %}
