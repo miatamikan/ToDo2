@@ -3,45 +3,45 @@
 
 <div class="card mt-3">
     <div class="card-body">
-        <h4 id="task-title" class="card-title">{{ person_name if person_name else "タスク一覧" }}</h4>
+        <h4 id="task-title" class="card-title text-light">{{ person_name if person_name else "タスク一覧" }}</h4>
         <ul id="task-list" class="list-group mt-3">
             {% for task in tasks %}
-            <!-- data-task-id 属性を使用 -->
-            <li id="task-{{ task.id }}" class="list-group-item task-item" data-task-id="{{ task.id }}">
-                <div class="task-content" style="max-height: 400px; overflow: hidden;">
+            <!-- タスクアイテム -->
+            <li id="task-{{ task.id }}" class="list-group-item task-item bg-dark text-light" data-task-id="{{ task.id }}">
+                <div class="task-content mb-2" style="max-height: 400px; overflow: hidden;">
                     {{ task.content | safe }}
                 </div>
                 {% if task.person %}
-                <br><strong>担当者:</strong> {{ task.person.name }}
+                <p><strong>担当者:</strong> {{ task.person.name }}</p>
                 {% else %}
-                <br><strong>担当者:</strong> 未割り当て
+                <p><strong>担当者:</strong> 未割り当て</p>
                 {% endif %}
-                <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
-                <br><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
+                <p><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}</p>
+                <p><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}</p>
                 
-                <!-- 添付ファイルを表示（新しいUI） -->
+                <!-- 添付ファイル（ダークテーマ用のUI） -->
                 {% if task.uploads %}
                 <hr>
                 <h6><strong>添付ファイル:</strong></h6>
                 <div class="row">
                     {% for upload in task.uploads %}
                     <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
-                        <div class="card">
+                        <div class="card bg-dark text-light">
                             {% if upload.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
                             <img src="{{ upload.url }}" alt="Thumbnail" class="card-img-top thumbnail">
                             {% else %}
-                            <div class="card-img-top text-center p-4 bg-light">
-                                <i class="fas fa-file fa-3x text-muted"></i>
+                            <div class="card-img-top text-center p-4 bg-secondary text-light">
+                                <i class="fas fa-file fa-3x"></i>
                             </div>
                             {% endif %}
                             <div class="card-body p-2">
                                 <p class="card-text text-truncate" title="{{ upload.filename }}">{{ upload.filename }}</p>
                             </div>
                             <div class="card-footer d-flex justify-content-between align-items-center p-2">
-                                <button class="btn btn-sm btn-outline-secondary btn-icon" onclick="copyToClipboard('{{ upload.url }}')" title="URLコピー">
+                                <button class="btn btn-sm btn-outline-light btn-icon" onclick="copyToClipboard('{{ upload.url }}')" title="URLコピー">
                                     <i class="fas fa-copy"></i>
                                 </button>
-                                <a href="{{ upload.url }}" target="_blank" class="btn btn-sm btn-outline-primary btn-icon" title="ダウンロード">
+                                <a href="{{ upload.url }}" target="_blank" class="btn btn-sm btn-outline-info btn-icon" title="ダウンロード">
                                     <i class="fas fa-download"></i>
                                 </a>
                                 <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" style="display:inline;">
@@ -74,23 +74,72 @@
 
 <!-- カスタムスタイル -->
 <style>
-    .btn-toggle-task {
-        background-color: #007bff;
-        color: white;
+    /* 全体のダークテーマ設定 */
+    body {
+        background-color: #1e1e1e;
+        color: #f8f9fa;
     }
-    .btn-toggle-task:hover {
-        background-color: #0056b3;
-        color: white;
+    .card-title {
+        color: #f8f9fa;
     }
+
+    /* タスクアイテムの背景とテキスト */
+    .list-group-item {
+        border: 1px solid #444;
+    }
+    .list-group-item p {
+        margin-bottom: 0.5rem;
+    }
+
+    /* 添付ファイルのカードデザイン */
+    .card.bg-dark {
+        background-color: #2c2c2c;
+        border: 1px solid #444;
+    }
+    .card.bg-dark .card-text {
+        color: #f8f9fa;
+    }
+    .bg-secondary {
+        background-color: #3a3a3a;
+    }
+    .text-light {
+        color: #f8f9fa !important;
+    }
+
+    /* ボタンのカラー設定 */
+    .btn-outline-light {
+        border-color: #f8f9fa;
+        color: #f8f9fa;
+    }
+    .btn-outline-light:hover {
+        background-color: #f8f9fa;
+        color: #2c2c2c;
+    }
+    .btn-outline-info {
+        border-color: #17a2b8;
+        color: #17a2b8;
+    }
+    .btn-outline-info:hover {
+        background-color: #17a2b8;
+        color: #fff;
+    }
+    .btn-outline-danger {
+        border-color: #dc3545;
+        color: #dc3545;
+    }
+    .btn-outline-danger:hover {
+        background-color: #dc3545;
+        color: #fff;
+    }
+
+    /* サムネイルのスタイル */
     .thumbnail {
         height: 100px;
         object-fit: cover;
-    }
-    .card-text {
-        font-size: 0.9em;
+        border: 1px solid #444;
     }
 
-    /* ボタンの幅を最小化 */
+    /* ボタンのアイコンサイズ調整 */
     .btn-icon {
         width: 32px;
         padding: 4px;
@@ -104,6 +153,7 @@
         margin: 0 1px;
     }
 
+    /* ファイル情報 */
     .file-info {
         color: #aaa;
     }
