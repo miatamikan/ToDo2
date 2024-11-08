@@ -1,3 +1,7 @@
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+
+<!-- タスク一覧の表示 -->
 <div class="card mt-3">
     <div class="card-body">
         <h4 id="task-title" class="card-title">{{ person_name if person_name else "タスク一覧" }}</h4>
@@ -23,7 +27,7 @@
                     {% endif %}
                     <p><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}</p>
                     <p><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}</p>
-                    
+
                     {% if task.uploads %}
                     <hr>
                     <h6><strong>添付ファイル:</strong></h6>
