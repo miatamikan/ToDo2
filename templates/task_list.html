@@ -1,90 +1,85 @@
 <div class="card mt-3">
     <div class="card-body">
         <h4 id="task-title" class="card-title">{{ person_name if person_name else "タスク一覧" }}</h4>
-        <ul id="task-list" class="list-group mt-3">
+        <div id="task-list" class="mt-4">
             {% for task in tasks %}
-            <!-- data-task-id 属性を使用 -->
-            <li id="task-{{ task.id }}" class="list-group-item task-item" data-task-id="{{ task.id }}">
-                <div class="task-content" style="max-height: 400px; overflow: hidden;">
-                    {{ task.content | safe }}
+            <div id="task-{{ task.id }}" class="card mb-4 task-item" data-task-id="{{ task.id }}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ task.content | safe }}</h5>
+                    <div>
+                        <a href="/edit/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" class="btn btn-sm btn-outline-primary mr-2">編集</a>
+                        <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('本当に削除しますか？');">削除</button>
+                        </form>
+                    </div>
                 </div>
-                {% if task.person %}
-                <br><strong>担当者:</strong> {{ task.person.name }}
-                {% else %}
-                <br><strong>担当者:</strong> 未割り当て
-                {% endif %}
-                <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
-                <br><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
-                
-                <!-- 添付ファイルを表示 -->
-                {% if task.uploads %}
-                <br><strong>添付ファイル:</strong>
-                <ul class="list-unstyled">
-                    {% for upload in task.uploads %}
-                    <li class="mb-2">
-                        <div class="d-flex align-items-center">
-                            {% if upload.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
-                            <img src="{{ upload.url }}" alt="Thumbnail" class="thumbnail mr-2">
-                            {% endif %}
-                            <a href="{{ upload.url }}" target="_blank">{{ upload.filename }}</a>
+                <div class="card-body">
+                    {% if task.person %}
+                    <p><strong>担当者:</strong> {{ task.person.name }}</p>
+                    {% else %}
+                    <p><strong>担当者:</strong> 未割り当て</p>
+                    {% endif %}
+                    <p><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}</p>
+                    <p><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}</p>
+                    
+                    {% if task.uploads %}
+                    <hr>
+                    <h6><strong>添付ファイル:</strong></h6>
+                    <div class="row">
+                        {% for upload in task.uploads %}
+                        <div class="col-md-4 col-sm-6 mb-3">
+                            <div class="card">
+                                {% if upload.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+                                <img src="{{ upload.url }}" alt="Thumbnail" class="card-img-top thumbnail">
+                                {% else %}
+                                <div class="card-img-top text-center p-5 bg-light">
+                                    <i class="fas fa-file fa-3x text-muted"></i>
+                                </div>
+                                {% endif %}
+                                <div class="card-body p-2">
+                                    <p class="card-text text-truncate">{{ upload.filename }}</p>
+                                </div>
+                                <div class="card-footer d-flex justify-content-between align-items-center p-2">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('{{ upload.url }}')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <a href="{{ upload.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('このファイルを削除してもよろしいですか？');">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <small class="d-block text-muted mt-1">アップロード日時: {{ upload.upload_time | format_datetime_jst }}</small>
+                            <small class="d-block text-muted">ファイルサイズ: {{ upload.filesize | filesizeformat }}</small>
                         </div>
-                        <div class="file-actions mt-1">
-                            <button class="btn btn-sm btn-primary mr-2" onclick="copyToClipboard('{{ upload.url }}')">
-                                <i class="fas fa-copy"></i> URLコピー
-                            </button>
-                            <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" style="display:inline;">
-                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('このファイルを削除してもよろしいですか？');">
-                                    <i class="fas fa-trash-alt"></i> 削除
-                                </button>
-                            </form>
-                        </div>
-                        <div class="file-info">
-                            <small>アップロード日時: {{ upload.upload_time | format_datetime_jst }}, ファイルサイズ: {{ upload.filesize | filesizeformat }}</small>
-                        </div>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-                
-                <!-- 折りたたみボタン -->
-                <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
-                
-                <!-- 削除ボタンと編集ボタン -->
-                <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
-                    <button type="submit" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</button>
-                </form>
-                <a href="/edit/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" class="btn btn-sm btn-info float-right">編集</a>
-            </li>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
             {% endfor %}
-        </ul>
+        </div>
     </div>
 </div>
 
 <!-- カスタムスタイル -->
 <style>
-    .btn-toggle-task {
-        background-color: #007bff;
-        color: white;
-    }
-    .btn-toggle-task:hover {
-        background-color: #0056b3;
-        color: white;
-    }
     .thumbnail {
-        width: 50px;
-        height: 50px;
+        height: 150px;
         object-fit: cover;
-        margin-right: 10px;
-        transition: transform 0.3s ease;
-        border-radius: 5px;
     }
-    .thumbnail:hover {
-        transform: scale(2);
+    .card-text {
+        font-size: 0.9em;
     }
-    .file-actions .btn {
-        font-size: 0.8em;
+    .card-footer .btn {
+        flex: 1;
+        margin: 0 2px;
     }
-    .file-info {
-        color: #aaa;
+    .card-footer .btn i {
+        margin-right: 0;
     }
 </style>
