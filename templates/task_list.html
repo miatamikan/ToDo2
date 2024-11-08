@@ -33,17 +33,17 @@
                     <h6><strong>添付ファイル:</strong></h6>
                     <div class="row">
                         {% for upload in task.uploads %}
-                        <div class="col-md-4 col-sm-6 mb-3">
+                        <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
                             <div class="card">
                                 {% if upload.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
                                 <img src="{{ upload.url }}" alt="Thumbnail" class="card-img-top thumbnail">
                                 {% else %}
-                                <div class="card-img-top text-center p-5 bg-light">
+                                <div class="card-img-top text-center p-4 bg-light">
                                     <i class="fas fa-file fa-3x text-muted"></i>
                                 </div>
                                 {% endif %}
                                 <div class="card-body p-2">
-                                    <p class="card-text text-truncate">{{ upload.filename }}</p>
+                                    <p class="card-text text-truncate" title="{{ upload.filename }}">{{ upload.filename }}</p>
                                 </div>
                                 <div class="card-footer d-flex justify-content-between align-items-center p-2">
                                     <button class="btn btn-sm btn-outline-secondary btn-icon" onclick="copyToClipboard('{{ upload.url }}')" title="URLコピー">
@@ -74,33 +74,9 @@
 
 <!-- カスタムスタイル -->
 <style>
-    /* オリジナルの色テーマを適用 */
-    .btn-info {
-        background-color: #17a2b8;
-        border-color: #17a2b8;
-        color: #fff;
-    }
-    .btn-danger {
-        background-color: #dc3545;
-        border-color: #dc3545;
-        color: #fff;
-    }
-    .btn-outline-secondary {
-        color: #6c757d;
-        border-color: #6c757d;
-    }
-    .btn-outline-primary {
-        color: #007bff;
-        border-color: #007bff;
-    }
-    .btn-outline-danger {
-        color: #dc3545;
-        border-color: #dc3545;
-    }
-
     /* サムネイルのスタイル */
     .thumbnail {
-        height: 150px;
+        height: 100px;
         object-fit: cover;
     }
     .card-text {
@@ -109,8 +85,8 @@
 
     /* ボタンの幅を最小化 */
     .btn-icon {
-        width: 36px;
-        padding: 6px;
+        width: 32px;
+        padding: 4px;
         text-align: center;
     }
     .btn-icon i {
@@ -118,7 +94,7 @@
     }
 
     .card-footer .btn {
-        margin: 0 2px;
+        margin: 0 1px;
     }
 </style>
 
