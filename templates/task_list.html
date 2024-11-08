@@ -15,10 +15,17 @@
                 {% endif %}
                 <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
                 <br><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
-
+                <!-- 添付ファイルを表示 -->
+                {% if task.uploads %}
+                <br><strong>添付ファイル:</strong>
+                <ul>
+                    {% for upload in task.uploads %}
+                    <li><a href="{{ upload.url }}">{{ upload.filename }}</a></li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
                 <!-- 折りたたみボタン -->
                 <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
-
                 <!-- 削除ボタンと編集ボタン -->
                 <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
                     <button type="submit" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</button>
