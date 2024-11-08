@@ -3,8 +3,8 @@
         <h4 id="task-title" class="card-title">{{ person_name if person_name else "タスク一覧" }}</h4>
         <ul id="task-list" class="list-group mt-3">
             {% for task in tasks %}
-            <!-- 各タスクに一意のIDを追加 -->
-            <li id="task-{{ task.id }}" class="list-group-item task-item" data-task-id="{{ task.id }}">
+            <!-- data-id 属性を追加 -->
+            <li id="task-{{ task.id }}" class="list-group-item task-item" data-id="{{ task.id }}">
                 <div class="task-content" style="max-height: 400px; overflow: hidden;">
                     {{ task.content | safe }}
                 </div>
@@ -46,6 +46,9 @@
                 </ul>
                 {% endif %}
                 
+                <!-- 折りたたみボタン -->
+                <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
+                
                 <!-- 削除ボタンと編集ボタン -->
                 <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
                     <button type="submit" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</button>
@@ -57,61 +60,67 @@
     </div>
 </div>
 
+<!-- 必要なスクリプトの読み込み -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Sortable.js を CDN から読み込み -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.13.0/Sortable.min.js"></script>
 <script>
-    // 折りたたみ機能
-    document.querySelectorAll('.task-item').forEach(function(taskItem) {
-        var contentDiv = taskItem.querySelector('.task-content');
-        var toggleButton = taskItem.querySelector('.btn-toggle-task');
+    document.addEventListener('DOMContentLoaded', function() {
+        // 折りたたみ機能
+        document.querySelectorAll('.task-item').forEach(function(taskItem) {
+            var contentDiv = taskItem.querySelector('.task-content');
+            var toggleButton = taskItem.querySelector('.btn-toggle-task');
 
-        if (contentDiv.scrollHeight > 400) {
-            toggleButton.style.display = 'block';
+            if (contentDiv.scrollHeight > 400) {
+                toggleButton.style.display = 'block';
 
-            toggleButton.addEventListener('click', function() {
-                if (contentDiv.style.maxHeight === '400px') {
-                    contentDiv.style.maxHeight = 'none';
-                    toggleButton.textContent = '折りたたむ';
-                } else {
-                    contentDiv.style.maxHeight = '400px';
-                    toggleButton.textContent = 'もっと見る';
-                }
+                toggleButton.addEventListener('click', function() {
+                    if (contentDiv.style.maxHeight === '400px') {
+                        contentDiv.style.maxHeight = 'none';
+                        toggleButton.textContent = '折りたたむ';
+                    } else {
+                        contentDiv.style.maxHeight = '400px';
+                        toggleButton.textContent = 'もっと見る';
+                    }
+                });
+            }
+        });
+
+        // タスクの並び替え機能
+        var taskList = document.getElementById('task-list');
+        new Sortable(taskList, {
+            animation: 150,
+            onEnd: function (evt) {
+                let tasks = Array.from(taskList.children).map(task => task.dataset.id);
+                fetch('/update_task_order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({task_order: tasks})
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to update task order');
+                    }
+                    return response.json();
+                })
+                .then(data => console.log(data))
+                .catch(error => alert('タスクの順序更新に失敗しました: ' + error.message));
+            }
+        });
+
+        // URLコピー機能
+        window.copyToClipboard = function(url) {
+            navigator.clipboard.writeText(url).then(function() {
+                alert('URLがクリップボードにコピーされました');
+            }, function(err) {
+                alert('コピーに失敗しました: ' + err);
             });
-        }
-    });
-
-    // タスクの並び替え機能
-    var taskList = document.getElementById('task-list');
-    new Sortable(taskList, {
-        animation: 150,
-        onEnd: function (evt) {
-            let tasks = Array.from(taskList.children).map(task => task.dataset.taskId);
-            fetch('/update_task_order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({task_order: tasks})
-            }).then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to update task order');
-                }
-                return response.json();
-            })
-            .then(data => console.log(data))
-            .catch(error => alert('タスクの順序更新に失敗しました: ' + error.message));
-        }
+        };
     });
 
     // ページタイトルの更新
     document.title = "{{ person_name if person_name else 'タスク一覧' }}";
-
-    // URLコピー機能
-    function copyToClipboard(url) {
-        navigator.clipboard.writeText(url).then(function() {
-            alert('URLがクリップボードにコピーされました');
-        }, function(err) {
-            alert('コピーに失敗しました: ' + err);
-        });
-    }
 </script>
 
 <!-- カスタムスタイル -->
