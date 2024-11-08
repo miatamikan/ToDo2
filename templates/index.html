@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <!-- Googleフォント -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+JP&display=swap" rel="stylesheet">
+
     <style>
         body {
             background-color: #121212;
@@ -227,86 +228,86 @@
     <a href="/add" class="floating-button"><i class="fas fa-plus"></i></a>
     <!-- JavaScriptコード -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Sortable.js -->
-    <script src="{{ url_for('static', filename='js/Sortable.min.js') }}"></script>
+    <!-- Sortable.js を CDN から読み込み -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.13.0/Sortable.min.js"></script>
     <script>
-        // コンテンツをロードする関数
-        function loadContent(url, hash) {
-            let sortOption = document.getElementById('sort-option').value;
-            let fullUrl = url + '?sort=' + sortOption;
-            $.get(fullUrl, function(data) {
-                $("#main-content-area").html(data);
-                let newTitle = $("#task-title").text();
-                document.title = newTitle;
+        document.addEventListener('DOMContentLoaded', function() {
+            // コンテンツをロードする関数
+            function loadContent(url, hash) {
+                let sortOption = document.getElementById('sort-option').value;
+                let fullUrl = url + '?sort=' + sortOption;
+                $.get(fullUrl, function(data) {
+                    $("#main-content-area").html(data);
+                    let newTitle = $("#task-title").text();
+                    document.title = newTitle;
 
-                // スクロール位置をリセットする
-                $(".main-content").scrollTop(0);
+                    // スクロール位置をリセットする
+                    $(".main-content").scrollTop(0);
 
-                // 検索機能を再適用
-                applySearchFilter();
+                    // 検索機能を再適用
+                    applySearchFilter();
 
-                // 現在表示中のURLをデータ属性に保存
-                $('#main-content-area').data('current-url', url);
+                    // 現在表示中のURLをデータ属性に保存
+                    $('#main-content-area').data('current-url', url);
 
-                // ハッシュが指定されている場合はスクロール
-                if (hash) {
-                    let targetElement = document.getElementById(hash);
-                    if (targetElement) {
-                        targetElement.scrollIntoView({ behavior: 'smooth' });
+                    // ハッシュが指定されている場合はスクロール
+                    if (hash) {
+                        let targetElement = document.getElementById(hash);
+                        if (targetElement) {
+                            targetElement.scrollIntoView({ behavior: 'smooth' });
+                        }
                     }
+                });
+            }
+
+            // 検索機能
+            function applySearchFilter() {
+                let filter = document.getElementById('task-search').value.trim().toLowerCase();
+                let keywords = filter.split(/\s+/);
+                let tasks = document.querySelectorAll('#task-list li');
+                tasks.forEach(task => {
+                    let taskText = task.textContent.toLowerCase();
+                    let match = keywords.every(keyword => taskText.includes(keyword));
+                    task.style.display = match ? '' : 'none';
+                });
+            }
+            document.getElementById('task-search').addEventListener('input', applySearchFilter);
+
+            // サイドバーの担当者リストをソート可能に
+            var personList = document.getElementById('person-list');
+            new Sortable(personList, {
+                animation: 150,
+                onEnd: function (evt) {
+                    let people = Array.from(personList.children)
+                        .filter(li => li.dataset.personId)
+                        .map(li => li.dataset.personId);
+                    fetch('/update_person_order', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({person_order: people})
+                    }).then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to update person order');
+                        }
+                        return response.json();
+                    })
+                    .then(data => console.log(data))
+                    .catch(error => alert('担当者の順序更新に失敗しました: ' + error.message));
                 }
             });
-        }
 
-        // 検索機能
-        function applySearchFilter() {
-            let filter = document.getElementById('task-search').value.trim().toLowerCase();
-            let keywords = filter.split(/\s+/);
-            let tasks = document.querySelectorAll('#task-list li');
-            tasks.forEach(task => {
-                let taskText = task.textContent.toLowerCase();
-                let match = keywords.every(keyword => taskText.includes(keyword));
-                task.style.display = match ? '' : 'none';
+            // 並び替えオプションが変更されたときに再読み込み
+            document.getElementById('sort-option').addEventListener('change', function() {
+                let currentUrl = $('#main-content-area').data('current-url');
+                if (!currentUrl) {
+                    currentUrl = '/all_tasks';
+                }
+                loadContent(currentUrl);
             });
-        }
-        document.getElementById('task-search').addEventListener('input', applySearchFilter);
 
-        // サイドバーの担当者リストをソート可能に
-        var personList = document.getElementById('person-list');
-        new Sortable(personList, {
-            animation: 150,
-            onEnd: function (evt) {
-                let people = Array.from(personList.children)
-                    .filter(li => li.dataset.personId)
-                    .map(li => li.dataset.personId);
-                fetch('/update_person_order', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({person_order: people})
-                }).then(response => {
-                    if (!response.ok) {
-                        throw new Error('Failed to update person order');
-                    }
-                    return response.json();
-                })
-                .then(data => console.log(data))
-                .catch(error => alert('担当者の順序更新に失敗しました: ' + error.message));
-            }
-        });
-
-        // 並び替えオプションが変更されたときに再読み込み
-        document.getElementById('sort-option').addEventListener('change', function() {
-            let currentUrl = $('#main-content-area').data('current-url');
-            if (!currentUrl) {
-                currentUrl = '/all_tasks';
-            }
-            loadContent(currentUrl);
-        });
-
-        // ページ読み込み時に初期コンテンツをロード
-        $(document).ready(function() {
+            // ページ読み込み時に初期コンテンツをロード
             let params = new URLSearchParams(window.location.search);
             let personId = params.get('person_id');
             let sortOption = params.get('sort') || 'priority';
