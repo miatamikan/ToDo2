@@ -19,16 +19,16 @@
                 <p><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}</p>
                 <p><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}</p>
                 
-                <!-- 添付ファイル（ダークテーマ用のUI） -->
+                <!-- アップロードUI部分 -->
                 {% if task.uploads %}
                 <hr>
                 <h6><strong>添付ファイル:</strong></h6>
-                <div class="row">
+                <div class="upload-container row">
                     {% for upload in task.uploads %}
                     <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
                         <div class="card bg-dark text-light">
                             {% if upload.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
-                            <img src="{{ upload.url }}" alt="Thumbnail" class="card-img-top thumbnail">
+                            <img src="{{ upload.url }}" alt="Thumbnail" class="card-img-top upload-thumbnail">
                             {% else %}
                             <div class="card-img-top text-center p-4 bg-secondary text-light">
                                 <i class="fas fa-file fa-3x"></i>
@@ -57,6 +57,7 @@
                     {% endfor %}
                 </div>
                 {% endif %}
+
                 
                 <!-- 折りたたみボタン -->
                 <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
@@ -72,92 +73,74 @@
     </div>
 </div>
 
-<!-- カスタムスタイル -->
 <style>
-    /* 全体のダークテーマ設定 */
-    body {
-        background-color: #1e1e1e;
-        color: #f8f9fa;
-    }
-    .card-title {
-        color: #f8f9fa;
-    }
-
-    /* タスクアイテムの背景とテキスト */
-    .list-group-item {
-        border: 1px solid #444;
-    }
-    .list-group-item p {
-        margin-bottom: 0.5rem;
-    }
-
-    /* 添付ファイルのカードデザイン */
-    .card.bg-dark {
+    /* アップロードUI全体を特定するコンテナセレクタ */
+    .upload-container .card.bg-dark {
         background-color: #2c2c2c;
         border: 1px solid #444;
     }
-    .card.bg-dark .card-text {
+    .upload-container .card.bg-dark .card-text {
         color: #f8f9fa;
     }
-    .bg-secondary {
+    .upload-container .bg-secondary {
         background-color: #3a3a3a;
     }
-    .text-light {
+    .upload-container .text-light {
         color: #f8f9fa !important;
     }
 
     /* ボタンのカラー設定 */
-    .btn-outline-light {
+    .upload-container .btn-outline-light {
         border-color: #f8f9fa;
         color: #f8f9fa;
     }
-    .btn-outline-light:hover {
+    .upload-container .btn-outline-light:hover {
         background-color: #f8f9fa;
         color: #2c2c2c;
     }
-    .btn-outline-info {
+    .upload-container .btn-outline-info {
         border-color: #17a2b8;
         color: #17a2b8;
     }
-    .btn-outline-info:hover {
+    .upload-container .btn-outline-info:hover {
         background-color: #17a2b8;
         color: #fff;
     }
-    .btn-outline-danger {
+    .upload-container .btn-outline-danger {
         border-color: #dc3545;
         color: #dc3545;
     }
-    .btn-outline-danger:hover {
+    .upload-container .btn-outline-danger:hover {
         background-color: #dc3545;
         color: #fff;
     }
 
     /* サムネイルのスタイル */
-    .thumbnail {
+    .upload-container .upload-thumbnail {
         height: 100px;
         object-fit: cover;
         border: 1px solid #444;
     }
 
     /* ボタンのアイコンサイズ調整 */
-    .btn-icon {
+    .upload-container .btn-icon {
         width: 32px;
         padding: 4px;
         text-align: center;
     }
-    .btn-icon i {
+    .upload-container .btn-icon i {
         margin-right: 0;
     }
 
-    .card-footer .btn {
+    /* ファイル情報 */
+    .upload-container .card-footer .btn {
         margin: 0 1px;
     }
-
-    /* ファイル情報 */
-    .file-info {
+    .upload-container .file-info {
         color: #aaa;
     }
 </style>
+
 
 <!-- コピー機能のJavaScript関数 -->
 <script>
