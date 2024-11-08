@@ -7,9 +7,11 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">{{ task.content | safe }}</h5>
                     <div>
-                        <a href="/edit/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" class="btn btn-sm btn-outline-primary mr-2">編集</a>
+                        <a href="/edit/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" class="btn btn-sm btn-info mr-2">編集</a>
                         <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
-                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('本当に削除しますか？');">削除</button>
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('本当に削除しますか？');">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -40,14 +42,14 @@
                                     <p class="card-text text-truncate">{{ upload.filename }}</p>
                                 </div>
                                 <div class="card-footer d-flex justify-content-between align-items-center p-2">
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('{{ upload.url }}')">
+                                    <button class="btn btn-sm btn-outline-secondary btn-icon" onclick="copyToClipboard('{{ upload.url }}')" title="URLコピー">
                                         <i class="fas fa-copy"></i>
                                     </button>
-                                    <a href="{{ upload.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <a href="{{ upload.url }}" target="_blank" class="btn btn-sm btn-outline-primary btn-icon" title="ダウンロード">
                                         <i class="fas fa-download"></i>
                                     </a>
                                     <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" style="display:inline;">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('このファイルを削除してもよろしいですか？');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" onclick="return confirm('このファイルを削除してもよろしいですか？');" title="削除">
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </form>
@@ -68,6 +70,31 @@
 
 <!-- カスタムスタイル -->
 <style>
+    /* オリジナルの色テーマを適用 */
+    .btn-info {
+        background-color: #17a2b8;
+        border-color: #17a2b8;
+        color: #fff;
+    }
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: #fff;
+    }
+    .btn-outline-secondary {
+        color: #6c757d;
+        border-color: #6c757d;
+    }
+    .btn-outline-primary {
+        color: #007bff;
+        border-color: #007bff;
+    }
+    .btn-outline-danger {
+        color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    /* サムネイルのスタイル */
     .thumbnail {
         height: 150px;
         object-fit: cover;
@@ -75,11 +102,29 @@
     .card-text {
         font-size: 0.9em;
     }
-    .card-footer .btn {
-        flex: 1;
-        margin: 0 2px;
+
+    /* ボタンの幅を最小化 */
+    .btn-icon {
+        width: 36px;
+        padding: 6px;
+        text-align: center;
     }
-    .card-footer .btn i {
+    .btn-icon i {
         margin-right: 0;
     }
+
+    .card-footer .btn {
+        margin: 0 2px;
+    }
 </style>
+
+<!-- コピー機能のJavaScript関数 -->
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        alert('URLをコピーしました: ' + text);
+    }, function(err) {
+        alert('コピーに失敗しました: ', err);
+    });
+}
+</script>
