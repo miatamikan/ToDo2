@@ -1,80 +1,87 @@
-<!-- Font Awesome -->
+<!-- Font Awesomeの読み込み -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
 
-<!-- タスク一覧の表示 -->
 <div class="card mt-3">
     <div class="card-body">
         <h4 id="task-title" class="card-title">{{ person_name if person_name else "タスク一覧" }}</h4>
-        <div id="task-list" class="mt-4">
+        <ul id="task-list" class="list-group mt-3">
             {% for task in tasks %}
-            <div id="task-{{ task.id }}" class="card mb-4 task-item" data-task-id="{{ task.id }}">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">{{ task.content | safe }}</h5>
-                    <div>
-                        <a href="/edit/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" class="btn btn-sm btn-info mr-2">編集</a>
-                        <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('本当に削除しますか？');">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </form>
-                    </div>
+            <!-- data-task-id 属性を使用 -->
+            <li id="task-{{ task.id }}" class="list-group-item task-item" data-task-id="{{ task.id }}">
+                <div class="task-content" style="max-height: 400px; overflow: hidden;">
+                    {{ task.content | safe }}
                 </div>
-                <div class="card-body">
-                    {% if task.person %}
-                    <p><strong>担当者:</strong> {{ task.person.name }}</p>
-                    {% else %}
-                    <p><strong>担当者:</strong> 未割り当て</p>
-                    {% endif %}
-                    <p><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}</p>
-                    <p><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}</p>
-
-                    {% if task.uploads %}
-                    <hr>
-                    <h6><strong>添付ファイル:</strong></h6>
-                    <div class="row">
-                        {% for upload in task.uploads %}
-                        <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
-                            <div class="card">
-                                {% if upload.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
-                                <img src="{{ upload.url }}" alt="Thumbnail" class="card-img-top thumbnail">
-                                {% else %}
-                                <div class="card-img-top text-center p-4 bg-light">
-                                    <i class="fas fa-file fa-3x text-muted"></i>
-                                </div>
-                                {% endif %}
-                                <div class="card-body p-2">
-                                    <p class="card-text text-truncate" title="{{ upload.filename }}">{{ upload.filename }}</p>
-                                </div>
-                                <div class="card-footer d-flex justify-content-between align-items-center p-2">
-                                    <button class="btn btn-sm btn-outline-secondary btn-icon" onclick="copyToClipboard('{{ upload.url }}')" title="URLコピー">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                    <a href="{{ upload.url }}" target="_blank" class="btn btn-sm btn-outline-primary btn-icon" title="ダウンロード">
-                                        <i class="fas fa-download"></i>
-                                    </a>
-                                    <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" style="display:inline;">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" onclick="return confirm('このファイルを削除してもよろしいですか？');" title="削除">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </form>
-                                </div>
+                {% if task.person %}
+                <br><strong>担当者:</strong> {{ task.person.name }}
+                {% else %}
+                <br><strong>担当者:</strong> 未割り当て
+                {% endif %}
+                <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
+                <br><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
+                
+                <!-- 添付ファイルを表示（新しいUI） -->
+                {% if task.uploads %}
+                <hr>
+                <h6><strong>添付ファイル:</strong></h6>
+                <div class="row">
+                    {% for upload in task.uploads %}
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
+                        <div class="card">
+                            {% if upload.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+                            <img src="{{ upload.url }}" alt="Thumbnail" class="card-img-top thumbnail">
+                            {% else %}
+                            <div class="card-img-top text-center p-4 bg-light">
+                                <i class="fas fa-file fa-3x text-muted"></i>
                             </div>
-                            <small class="d-block text-muted mt-1">アップロード日時: {{ upload.upload_time | format_datetime_jst }}</small>
-                            <small class="d-block text-muted">ファイルサイズ: {{ upload.filesize | filesizeformat }}</small>
+                            {% endif %}
+                            <div class="card-body p-2">
+                                <p class="card-text text-truncate" title="{{ upload.filename }}">{{ upload.filename }}</p>
+                            </div>
+                            <div class="card-footer d-flex justify-content-between align-items-center p-2">
+                                <button class="btn btn-sm btn-outline-secondary btn-icon" onclick="copyToClipboard('{{ upload.url }}')" title="URLコピー">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <a href="{{ upload.url }}" target="_blank" class="btn btn-sm btn-outline-primary btn-icon" title="ダウンロード">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" onclick="return confirm('このファイルを削除してもよろしいですか？');" title="削除">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
-                        {% endfor %}
+                        <small class="d-block text-muted mt-1">アップロード日時: {{ upload.upload_time | format_datetime_jst }}</small>
+                        <small class="d-block text-muted">ファイルサイズ: {{ upload.filesize | filesizeformat }}</small>
                     </div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
-            </div>
+                {% endif %}
+                
+                <!-- 折りたたみボタン -->
+                <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
+                
+                <!-- 削除ボタンと編集ボタン -->
+                <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</button>
+                </form>
+                <a href="/edit/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" class="btn btn-sm btn-info float-right">編集</a>
+            </li>
             {% endfor %}
-        </div>
+        </ul>
     </div>
 </div>
 
 <!-- カスタムスタイル -->
 <style>
-    /* サムネイルのスタイル */
+    .btn-toggle-task {
+        background-color: #007bff;
+        color: white;
+    }
+    .btn-toggle-task:hover {
+        background-color: #0056b3;
+        color: white;
+    }
     .thumbnail {
         height: 100px;
         object-fit: cover;
@@ -96,6 +103,10 @@
     .card-footer .btn {
         margin: 0 1px;
     }
+
+    .file-info {
+        color: #aaa;
+    }
 </style>
 
 <!-- コピー機能のJavaScript関数 -->
@@ -104,7 +115,7 @@ function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(function() {
         alert('URLをコピーしました: ' + text);
     }, function(err) {
-        alert('コピーに失敗しました: ', err);
+        alert('コピーに失敗しました: ' + err);
     });
 }
 </script>
