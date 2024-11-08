@@ -10,15 +10,10 @@
 <div class="container mt-5">
     <h1>タスクを追加</h1>
     <a href="/" class="btn btn-secondary mb-3">トップページに戻る</a>
-    <form method="POST">
-        
+    <form method="POST" enctype="multipart/form-data">
         <div class="form-group">
             <label for="content">タスクの内容</label>
-            <textarea id="content" name="content" class="form-control" rows="20" required>
-<pre>
-
-</pre>
-</textarea>
+            <textarea id="content" name="content" class="form-control" rows="20" required></textarea>
         </div>
         <div class="form-group">
             <label for="person_id">担当者</label>
@@ -33,6 +28,11 @@
         <div class="form-group">
             <label for="follow_up_date">フォロー日</label>
             <input type="date" id="follow_up_date" name="follow_up_date" class="form-control">
+        </div>
+        <!-- ファイルアップロードフィールドを追加 -->
+        <div class="form-group">
+            <label for="files">添付ファイル</label>
+            <input type="file" id="files" name="files" class="form-control" multiple>
         </div>
         <button type="submit" class="btn btn-primary">追加</button>
     </form>
