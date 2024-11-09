@@ -18,61 +18,67 @@
                 <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
                 <br><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
                 
-                <!-- 添付ファイルの表示 -->
-                {% if task.uploads %}
-                <hr>
-                <h6><strong>添付ファイル:</strong></h6>
-                <div class="row">
-                    {% for upload in task.uploads %}
-                    <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
-                        <div class="card">
-                            <!-- 拡張子ごとにアイコンを切り替え -->
-                            {% if upload.filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.tiff', '.tif', '.svg', '.ico', '.heic', '.heif')) %}
-                            <img src="{{ upload.url }}" alt="Thumbnail" class="card-img-top thumbnail">
-                            {% elif upload.filename.endswith('.pdf') %}
-                            <div class="card-img-top text-center p-4 bg-light">
-                                <i class="fas fa-file-pdf fa-3x text-danger"></i>
-                            </div>
-                            {% elif upload.filename.endswith(('.txt', '.md', '.rtf', '.log', '.json', '.xml', '.html', '.htm', '.css', '.js', '.py', '.java', '.cpp', '.c', '.rb')) %}
-                            <div class="card-img-top text-center p-4 bg-light">
-                                <i class="fas fa-file-word fa-3x text-primary"></i>
-                            </div>
-                            {% elif upload.filename.endswith(('.xls', '.xlsx', '.xlsm', '.csv')) %}
-                            <div class="card-img-top text-center p-4 bg-light">
-                                <i class="fas fa-file-excel fa-3x text-success"></i>
-                            </div>
-                            {% elif upload.filename.endswith(('.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.iso', '.tgz', '.tar.gz', '.tar.bz2')) %}
-                            <div class="card-img-top text-center p-4 bg-light">
-                                <i class="fas fa-file-archive fa-3x text-warning"></i>
-                            </div>
-                            {% else %}
-                            <div class="card-img-top text-center p-4 bg-light">
-                                <i class="fas fa-file fa-3x text-muted"></i>
-                            </div>
-                            {% endif %}
-                            <div class="card-body p-2">
-                                <p class="card-text text-truncate" title="{{ upload.filename }}">{{ upload.filename }}</p>
-                            </div>
-                            <div class="card-footer d-flex justify-content-between align-items-center p-2">
-                                <button class="btn btn-sm btn-outline-secondary btn-icon" onclick="copyToClipboard('{{ upload.url }}')" title="URLコピー">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                                <a href="{{ upload.url }}" target="_blank" class="btn btn-sm btn-outline-primary btn-icon" title="ダウンロード">
-                                    <i class="fas fa-download"></i>
-                                </a>
-                                <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" style="display:inline;">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" onclick="return confirm('このファイルを削除してもよろしいですか？');" title="削除">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        <small class="d-block text-muted mt-1">アップロード日時: {{ upload.upload_time | format_datetime_jst }}</small>
-                        <small class="d-block text-muted">ファイルサイズ: {{ upload.filesize | filesizeformat }}</small>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
+<!-- 添付ファイルの表示 -->
+{% if task.uploads %}
+<hr>
+<h6><strong>添付ファイル:</strong></h6>
+<div class="row">
+    {% for upload in task.uploads %}
+    <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
+        <div class="card">
+            <!-- 拡張子ごとにアイコンを切り替え -->
+            {% if upload.filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.tiff', '.tif', '.svg', '.ico', '.heic', '.heif')) %}
+            <img src="{{ upload.url }}" alt="Thumbnail" class="card-img-top thumbnail">
+            {% elif upload.filename.endswith('.pdf') %}
+            <div class="card-img-top text-center p-4 bg-light">
+                <i class="fas fa-file-pdf fa-3x text-danger"></i>
+            </div>
+            {% elif upload.filename.endswith(('.txt', '.md', '.rtf', '.log', '.json', '.xml', '.html', '.htm', '.css', '.js', '.py', '.java', '.cpp', '.c', '.rb')) %}
+            <div class="card-img-top text-center p-4 bg-light">
+                <i class="fas fa-file-word fa-3x text-primary"></i>
+            </div>
+            {% elif upload.filename.endswith(('.xls', '.xlsx', '.xlsm', '.csv')) %}
+            <div class="card-img-top text-center p-4 bg-light">
+                <i class="fas fa-file-excel fa-3x text-success"></i>
+            </div>
+            {% elif upload.filename.endswith(('.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.iso', '.tgz', '.tar.gz', '.tar.bz2')) %}
+            <div class="card-img-top text-center p-4 bg-light">
+                <i class="fas fa-file-archive fa-3x text-warning"></i>
+            </div>
+            {% elif upload.filename.endswith('.msg') %}
+            <div class="card-img-top text-center p-4 bg-light">
+                <i class="fas fa-envelope fa-3x text-info"></i>
+            </div>
+            {% else %}
+            <div class="card-img-top text-center p-4 bg-light">
+                <i class="fas fa-file fa-3x text-muted"></i>
+            </div>
+            {% endif %}
+            <div class="card-body p-2">
+                <p class="card-text text-truncate" title="{{ upload.filename }}">{{ upload.filename }}</p>
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center p-2">
+                <button class="btn btn-sm btn-outline-secondary btn-icon" onclick="copyToClipboard('{{ upload.url }}')" title="URLコピー">
+                    <i class="fas fa-copy"></i>
+                </button>
+                <a href="{{ upload.url }}" target="_blank" class="btn btn-sm btn-outline-primary btn-icon" title="ダウンロード">
+                    <i class="fas fa-download"></i>
+                </a>
+                <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" onclick="return confirm('このファイルを削除してもよろしいですか？');" title="削除">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <small class="d-block text-muted mt-1">アップロード日時: {{ upload.upload_time | format_datetime_jst }}</small>
+        <small class="d-block text-muted">ファイルサイズ: {{ upload.filesize | filesizeformat }}</small>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+                <!-- 折りたたみボタン -->
+                <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
                 
                 <!-- 削除ボタンと編集ボタン -->
                 <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
