@@ -157,18 +157,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const toggleButtons = document.querySelectorAll('.btn-toggle-task');
     
     toggleButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const taskItem = this.closest('.task-item');
-            const content = taskItem.querySelector('.task-content');
-            
-            if (content.style.maxHeight && content.style.maxHeight !== '0px') {
-                content.style.maxHeight = '0px';
-                this.textContent = 'もっと見る';
-            } else {
-                content.style.maxHeight = '400px'; // 必要に応じて調整
-                this.textContent = '折りたたむ';
-            }
-        });
+        const taskItem = button.closest('.task-item');
+        const content = taskItem.querySelector('.task-content');
+        
+        // コンテンツが省略されているかチェック
+        if (content.scrollHeight <= 400) {
+            // 省略されていない場合、ボタンを非表示
+            button.style.display = 'none';
+        } else {
+            // 省略されている場合、クリックイベントを追加
+            button.addEventListener('click', function() {
+                if (content.style.maxHeight === 'none') {
+                    content.style.maxHeight = '400px'; // 折りたたむ
+                    this.textContent = 'もっと見る';
+                } else {
+                    content.style.maxHeight = 'none'; // 展開
+                    this.textContent = '折りたたむ';
+                }
+            });
+        }
     });
 });
 </script>
