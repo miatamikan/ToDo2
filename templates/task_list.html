@@ -143,6 +143,7 @@
 
 <!-- JavaScript -->
 <script>
+// コピー機能
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(function() {
         alert('URLをコピーしました: ' + text);
@@ -150,4 +151,24 @@ function copyToClipboard(text) {
         alert('コピーに失敗しました: ' + err);
     });
 }
+
+// 折りたたみ機能
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleButtons = document.querySelectorAll('.btn-toggle-task');
+    
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const taskItem = this.closest('.task-item');
+            const content = taskItem.querySelector('.task-content');
+            
+            if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+                content.style.maxHeight = '0px';
+                this.textContent = 'もっと見る';
+            } else {
+                content.style.maxHeight = '400px'; // 必要に応じて調整
+                this.textContent = '折りたたむ';
+            }
+        });
+    });
+});
 </script>
