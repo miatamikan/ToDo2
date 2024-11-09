@@ -79,7 +79,7 @@
                 {% endif %}
                 
                 <!-- 折りたたみボタン -->
-                <button class="btn btn-sm btn-toggle-task mt-2">もっと見る</button>
+                <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
                 
                 <!-- 削除ボタンと編集ボタン -->
                 <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
@@ -161,18 +161,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const content = taskItem.querySelector('.task-content');
         
         // コンテンツが省略されているかチェック
-        if (content.scrollHeight <= 400) {
-            // 省略されていない場合、ボタンを非表示
-            button.style.display = 'none';
-        } else {
-            // 省略されている場合、クリックイベントを追加
+        if (content.scrollHeight > content.clientHeight) {
+            // 省略されている場合、ボタンを表示
+            button.style.display = 'inline-block';
+            
             button.addEventListener('click', function() {
                 if (content.style.maxHeight === 'none') {
                     content.style.maxHeight = '400px'; // 折りたたむ
                     this.textContent = 'もっと見る';
                 } else {
                     content.style.maxHeight = 'none'; // 展開
-                    this.textContent = '折りたたむ';
+                    this.text装テキスト = '折りたたむ';
                 }
             });
         }
