@@ -8,7 +8,7 @@
             {% for task in tasks %}
             <li id="task-{{ task.id }}" class="list-group-item task-item" data-task-id="{{ task.id }}">
                 <!-- タイトルを追加 -->
-                <div class="mb-2">{{ task.title if task.title else "(タイトルなし)" }}</div>
+                <div class="task-title mb-3">{{ task.title if task.title else "(タイトルなし)" }}</div>
                 
                 <div class="task-content" style="max-height: 400px; overflow: hidden;">
                     {{ task.content | safe }}
@@ -147,6 +147,13 @@
     .btn-toggle-task:hover {
         background-color: #0056b3;
         color: white;
+    }
+    .task-title {
+        color: #2c3e50;
+        font-size: 1.1em;
+        font-weight: 500;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 0.5rem;
     }
 </style>
 
