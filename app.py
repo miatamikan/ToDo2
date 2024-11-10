@@ -10,24 +10,21 @@ from sqlalchemy import text, nulls_last
 from werkzeug.utils import secure_filename
 import re
 import unicodedata
-from flask import request
-
-
 
 app = Flask(__name__)
 
-
 # ログインが必要なデコレータを作成
 def login_required(func):
+    from functools import wraps
+
+    @wraps(func)
     def wrapper(*args, **kwargs):
         if not session.get('logged_in'):
             flash('ログインが必要です')
             return redirect(url_for('login'))
         return func(*args, **kwargs)
 
-    wrapper.__name__ = func.__name__
     return wrapper
-
 
 # データベースファイルをダウンロードするためのエンドポイント
 @app.route('/download_db')
@@ -35,7 +32,6 @@ def login_required(func):
 def download_db():
     db_path = '/persistent'  # データベースファイルが格納されているディレクトリ
     return send_from_directory(db_path, 'todo.db', as_attachment=True)
-
 
 # データベースファイルをアップロードして適用するためのエンドポイント
 @app.route('/upload_db', methods=['GET', 'POST'])
@@ -58,7 +54,6 @@ def upload_db():
     </form>
     '''
 
-
 # データベースファイルを削除するためのエンドポイント
 @app.route('/delete_db', methods=['POST'])
 @login_required  # ログインが必要なエンドポイント
@@ -73,13 +68,11 @@ def delete_db():
     except Exception as e:
         return f"An error occurred while deleting the database: {e}", 500
 
-
 # データベース削除ページの表示
 @app.route('/delete_db_page')
 @login_required  # ログインが必要なエンドポイント
 def delete_db_page():
     return render_template('delete_db.html')
-
 
 # データベース編集ページの表示
 @app.route('/db_edit', methods=['GET', 'POST'])
@@ -105,12 +98,10 @@ def db_edit():
 
     return render_template('db_edit.html', result=result, error=error)
 
-
 # 日本標準時に変換する関数
 def convert_to_jst(utc_time):
     jst = pytz.timezone('Asia/Tokyo')
     return utc_time.astimezone(jst)
-
 
 # config.ini から設定を読み込む
 config = configparser.ConfigParser()
@@ -146,11 +137,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{PERSISTENT_DIR}/todo.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # SQLAlchemyのイベント追跡を無効化（推奨）
 db = SQLAlchemy(app)  # これが必要
 
-
 # ファイルサイズと全体容量の制限を設定
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 MAX_TOTAL_SIZE = 900 * 1024 * 1024  # 900MB
-
 
 def japanese_secure_filename(filename):
     """
@@ -164,7 +153,6 @@ def japanese_secure_filename(filename):
     filename = allowed_chars.sub('', filename)
     return filename
 
-
 def get_unique_filename(directory, filename):
     """
     指定されたディレクトリ内で重複しないファイル名を取得する。
@@ -177,13 +165,9 @@ def get_unique_filename(directory, filename):
         counter += 1
     return unique_filename
 
-
-
 def get_total_upload_size():
     total_size = db.session.query(db.func.sum(Upload.filesize)).scalar()
     return total_size or 0
-
-
 
 # モデルの定義
 class Person(db.Model):
@@ -192,10 +176,11 @@ class Person(db.Model):
     order = db.Column(db.Integer, nullable=False, default=0)
     tasks = db.relationship('Task', backref='person', lazy=True, order_by='Task.priority')
 
-
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)  # タイトルを追加
     content = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='not_started')  # ステータスを追加
     priority = db.Column(db.Integer, nullable=False)
     person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=True)
     last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -203,7 +188,6 @@ class Task(db.Model):
 
     def update_last_updated(self):
         self.last_updated = datetime.utcnow()
-
 
 # Upload モデルの定義
 class Upload(db.Model):
@@ -215,8 +199,6 @@ class Upload(db.Model):
     url = db.Column(db.String(255), nullable=False)
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=True)  # タスクIDを追加
     task = db.relationship('Task', backref=db.backref('uploads', lazy=True))
-
-
 
 # 初期データの作成
 def create_initial_data():
@@ -231,7 +213,6 @@ def create_initial_data():
         db.session.add(past_log_person)
         db.session.commit()
 
-
 # テーブル作成（初回起動時のみ）
 with app.app_context():
     db.create_all()
@@ -239,7 +220,6 @@ with app.app_context():
 
 # ログイン試行回数とタイムスタンプを保存する辞書
 login_attempts = {}
-
 
 # ログインページ
 @app.route('/login', methods=['GET', 'POST'])
@@ -282,14 +262,12 @@ def login():
 
     return render_template('login.html')
 
-
 # ログアウト
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None)
     flash('ログアウトしました')
     return redirect(url_for('login'))
-
 
 # ルートページ
 @app.route('/')
@@ -300,7 +278,6 @@ def index():
     person_id = request.args.get('person_id')
     sort_option = request.args.get('sort')
     return render_template('index.html', people=people, person_id=person_id, sort_option=sort_option)
-
 
 # 全タスクの取得
 @app.route('/all_tasks')
@@ -316,7 +293,6 @@ def all_tasks():
     else:
         tasks = Task.query.filter(Task.person_id != past_log_person.id).order_by(Task.priority).all()
     return render_template('task_list.html', tasks=tasks, person_name=None, person_id=None, sort_option=sort_option)
-
 
 # 担当者別タスクの取得
 @app.route('/person_tasks/<int:person_id>')
@@ -334,7 +310,6 @@ def person_tasks(person_id):
     return render_template('task_list.html', tasks=tasks, person_name=person.name, person_id=person.id,
                            sort_option=sort_option)
 
-
 # タスクの順序更新
 @app.route('/update_task_order', methods=['POST'])
 def update_task_order():
@@ -349,7 +324,6 @@ def update_task_order():
     db.session.commit()  # No need to update last_updated here
     return jsonify({'status': 'success'})
 
-
 # 担当者の順序更新
 @app.route('/update_person_order', methods=['POST'])
 def update_person_order():
@@ -363,7 +337,6 @@ def update_person_order():
             person.order = index
     db.session.commit()
     return jsonify({'status': 'success'})
-
 
 # 担当者の追加・編集・削除
 @app.route('/edit_person', methods=['GET', 'POST'])
@@ -406,7 +379,6 @@ def edit_person():
         return redirect(url_for('edit_person'))
     return render_template('edit_person.html', people=people)
 
-
 # タスクの追加
 @app.route('/add', methods=['GET', 'POST'])
 def add_task():
@@ -414,19 +386,31 @@ def add_task():
         return redirect(url_for('login'))
     people = Person.query.order_by(Person.order).all()
     if request.method == 'POST':
+        title = request.form['title']
         content = request.form['content']
+        status = request.form['status']
         person_id = request.form.get('person_id')
         follow_up_date_str = request.form.get('follow_up_date')
+        
         if follow_up_date_str:
             follow_up_date = datetime.strptime(follow_up_date_str, '%Y-%m-%d')
         else:
             follow_up_date = None
+            
         min_priority = db.session.query(db.func.min(Task.priority)).scalar()
         if min_priority is None:
             min_priority = 0
         else:
             min_priority -= 1
-        new_task = Task(content=content, person_id=person_id, priority=min_priority, follow_up_date=follow_up_date)
+            
+        new_task = Task(
+            title=title,
+            content=content,
+            status=status,
+            person_id=person_id,
+            priority=min_priority,
+            follow_up_date=follow_up_date
+        )
         db.session.add(new_task)
         db.session.commit()
 
@@ -456,8 +440,6 @@ def add_task():
         return redirect(url_for('index'))
     return render_template('add_task.html', people=people)
 
-
-
 # タスクの編集
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_task(id):
@@ -469,9 +451,12 @@ def edit_task(id):
     sort_option = request.args.get('sort')
 
     if request.method == 'POST':
+        task.title = request.form['title']
         task.content = request.form['content']
+        task.status = request.form['status']
         task.person_id = request.form.get('person_id')
         follow_up_date_str = request.form.get('follow_up_date')
+        
         if follow_up_date_str:
             task.follow_up_date = datetime.strptime(follow_up_date_str, '%Y-%m-%d')
         else:
@@ -521,9 +506,6 @@ def edit_task(id):
         return redirect(redirect_url)
     return render_template('edit_task.html', task=task, people=people, person_id=person_id, sort_option=sort_option)
 
-
-
-
 # タスク一覧表示時にJSTに変換して表示
 @app.template_filter('format_datetime_jst')
 def format_datetime_jst(value):
@@ -531,7 +513,6 @@ def format_datetime_jst(value):
         return '未更新'
     jst_time = convert_to_jst(value)
     return jst_time.strftime('%Y年%m月%d日 %H:%M')
-
 
 # フォロー日を表示するためのフィルタを追加
 @app.template_filter('format_date')
@@ -541,7 +522,6 @@ def format_date(value):
         return jst_time.strftime('%Y年%m月%d日')
     else:
         return '未設定'
-
 
 # ファイルサイズをフォーマットするフィルタを追加
 @app.template_filter('filesizeformat')
@@ -554,7 +534,6 @@ def filesizeformat(value):
         return f'{value / (1024 * 1024):.2f} MB'
     else:
         return f'{value / (1024 * 1024 * 1024):.2f} GB'
-
 
 # タスクの削除（担当者を過去ログに変更）
 @app.route('/delete/<int:id>', methods=['POST'])
@@ -586,8 +565,6 @@ def delete_task(id):
         redirect_url = url_for('index', sort=sort_option)
     return redirect(redirect_url)
 
-
-
 @app.route('/past_log_tasks')
 def past_log_tasks():
     if not session.get('logged_in'):
@@ -595,7 +572,6 @@ def past_log_tasks():
     past_log_person = Person.query.filter_by(name='過去ログ').first()
     tasks = Task.query.filter_by(person_id=past_log_person.id).order_by(Task.priority).all()
     return render_template('task_list.html', tasks=tasks, person_name='過去ログ')
-
 
 # ファイルアップロード機能のエンドポイント
 @app.route('/upload', methods=['GET', 'POST'])
@@ -643,15 +619,11 @@ def upload_file():
     files = Upload.query.all()
     return render_template('upload.html', files=files)
 
-
-
-
 # アップロードされたファイルを取得するエンドポイント
 @app.route('/uploads/<filename>')
 @login_required
 def uploaded_file(filename):
     return send_file(os.path.join(UPLOAD_DIR, filename))
-
 
 # アップロードされたファイルを削除するエンドポイント
 @app.route('/delete_file/<int:id>', methods=['POST'])
@@ -675,13 +647,10 @@ def delete_file(id):
     # 元のページにリダイレクト
     return redirect(request.referrer or url_for('upload_file'))
 
-
-
 # robots.txtの設定（検索エンジンによるインデックスを防止）
 @app.route('/robots.txt')
 def robots_txt():
     return "User-agent: *\nDisallow: /", 200, {'Content-Type': 'text/plain'}
-
 
 if __name__ == '__main__':
     app.run(debug=False)
