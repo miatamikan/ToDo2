@@ -1,46 +1,79 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>タスクを追加</title>
-    <meta name="robots" content="noindex">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-</head>
-<body>
-<div class="container mt-5">
-    <h1>タスクを追加</h1>
-    <a href="/" class="btn btn-secondary mb-3">トップページに戻る</a>
-    <form method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="content">タスクの内容</label>
-            <textarea id="content" name="content" class="form-control" rows="20" required>
-<pre>
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5 max-w-2xl mx-auto">
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">タスクを追加</h1>
+            <a href="{{ url_for('index') }}" class="text-gray-600 hover:text-gray-800">
+                <i class="fas fa-times"></i>
+            </a>
+        </div>
 
-</pre>
-</textarea>
-        </div>
-        <div class="form-group">
-            <label for="person_id">担当者</label>
-            <select id="person_id" name="person_id" class="form-control">
-                <option value="">未割り当て</option>
-                {% for person in people %}
-                <option value="{{ person.id }}">{{ person.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <!-- フォロー日を追加 -->
-        <div class="form-group">
-            <label for="follow_up_date">フォロー日</label>
-            <input type="date" id="follow_up_date" name="follow_up_date" class="form-control">
-        </div>
-        <br>
-        <!-- ファイルアップロードフィールドを追加 -->
-        <div class="form-group">
-            <label for="files">添付ファイル</label>
-            <input type="file" id="files" name="files" class="form-control" multiple>
-        </div>
-        <button type="submit" class="btn btn-primary">追加</button>
-    </form>
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            <!-- タイトル -->
+            <div class="space-y-2">
+                <label for="title" class="block text-sm font-medium text-gray-700">タイトル</label>
+                <input type="text" id="title" name="title" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- タスクの内容 -->
+            <div class="space-y-2">
+                <label for="content" class="block text-sm font-medium text-gray-700">タスクの内容</label>
+                <textarea id="content" name="content" rows="4" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+
+            <!-- ステータス -->
+            <div class="space-y-2">
+                <label for="status" class="block text-sm font-medium text-gray-700">ステータス</label>
+                <select id="status" name="status" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="not_started">未着手</option>
+                    <option value="in_progress">進行中</option>
+                    <option value="on_hold">保留</option>
+                    <option value="completed">完了</option>
+                </select>
+            </div>
+
+            <!-- 担当者選択 -->
+            <div class="space-y-2">
+                <label for="person_id" class="block text-sm font-medium text-gray-700">担当者</label>
+                <select id="person_id" name="person_id"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">未割り当て</option>
+                    {% for person in people %}
+                    <option value="{{ person.id }}">{{ person.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- フォロー日 -->
+            <div class="space-y-2">
+                <label for="follow_up_date" class="block text-sm font-medium text-gray-700">フォロー日</label>
+                <input type="date" id="follow_up_date" name="follow_up_date"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- ファイルアップロード -->
+            <div class="space-y-2">
+                <label for="files" class="block text-sm font-medium text-gray-700">添付ファイル</label>
+                <input type="file" id="files" name="files" multiple
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- 送信ボタン -->
+            <div class="flex justify-end space-x-4">
+                <a href="{{ url_for('index') }}"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                    キャンセル
+                </a>
+                <button type="submit"
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                    追加
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
-</body>
-</html>
+{% endblock %}
