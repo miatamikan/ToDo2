@@ -10,14 +10,11 @@
 <div class="container mt-5">
     <h1>タスクを編集</h1>
     <a href="/" class="btn btn-secondary mb-3">トップページに戻る</a>
-    <form method="POST" enctype="multipart/form-data">
-        <!-- タイトル入力欄を追加 -->
+    <form method="POST" enctype="multipart/form-data" id="editTaskForm">
         <div class="form-group">
             <label for="title">タイトル</label>
             <input type="text" id="title" name="title" class="form-control" value="{{ task.title }}" required>
         </div>
-
-        <!-- ステータス選択欄を追加 -->
         <div class="form-group">
             <label for="status">ステータス</label>
             <select id="status" name="status" class="form-control" required>
@@ -27,12 +24,10 @@
                 <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>完了</option>
             </select>
         </div>
-
         <div class="form-group">
             <label for="content">タスクの内容</label>
             <textarea id="content" name="content" class="form-control" rows="20" required>{{ task.content }}</textarea>
         </div>
-
         <div class="form-group">
             <label for="person_id">担当者</label>
             <select id="person_id" name="person_id" class="form-control">
@@ -42,40 +37,86 @@
                 {% endfor %}
             </select>
         </div>
-
         <div class="form-group">
             <label for="follow_up_date">フォロー日</label>
             <input type="date" id="follow_up_date" name="follow_up_date" class="form-control"
                    value="{{ task.follow_up_date.strftime('%Y-%m-%d') if task.follow_up_date else '' }}">
         </div>
-
         <div class="form-check mb-3">
             <input type="checkbox" id="priority" name="priority" class="form-check-input">
             <label class="form-check-label" for="priority">優先度を上げる</label>
         </div>
-
         {% if task.uploads %}
         <div class="form-group">
             <label>現在の添付ファイル</label>
             {% for upload in task.uploads %}
-            <div class="d-flex justify-content-between align-items-center border p-2 mb-2">
+            <div class="d-flex justify-content-between align-items-center border p-2 mb-2" id="file-{{ upload.id }}">
                 <a href="{{ upload.url }}" class="text-decoration-none">{{ upload.filename }}</a>
-                <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" class="d-inline">
-                    <button type="submit" class="btn btn-danger btn-sm" 
-                            onclick="return confirm('このファイルを削除してもよろしいですか？')">削除</button>
-                </form>
+                <button type="button" class="btn btn-danger btn-sm delete-file" 
+                        data-file-id="{{ upload.id }}"
+                        onclick="deleteFile({{ upload.id }})">削除</button>
             </div>
             {% endfor %}
         </div>
         {% endif %}
-
         <div class="form-group">
             <label for="files">新規添付ファイル</label>
             <input type="file" id="files" name="files" class="form-control" multiple>
         </div>
-
         <button type="submit" class="btn btn-primary">更新</button>
     </form>
 </div>
+
+<script>
+async function deleteFile(fileId) {
+    if (!confirm('このファイルを削除してもよろしいですか？')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/delete_file/${fileId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin'
+        });
+
+        if (response.ok) {
+            // 成功したら該当の要素を削除
+            const fileElement = document.getElementById(`file-${fileId}`);
+            if (fileElement) {
+                fileElement.remove();
+            }
+        } else {
+            alert('ファイルの削除に失敗しました');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('ファイルの削除中にエラーが発生しました');
+    }
+}
+
+// フォーム送信前の確認
+document.getElementById('editTaskForm').addEventListener('submit', function(e) {
+    const filesInput = document.getElementById('files');
+    const files = filesInput.files;
+    
+    if (files.length > 0) {
+        // ファイルサイズの合計を計算
+        let totalSize = 0;
+        for (let i = 0; i < files.length; i++) {
+            totalSize += files[i].size;
+        }
+        
+        // 50MB = 50 * 1024 * 1024 bytes
+        if (totalSize > 50 * 1024 * 1024) {
+            alert('添付ファイルの合計サイズが50MBを超えています');
+            e.preventDefault();
+            return false;
+        }
+    }
+});
+</script>
 </body>
 </html>
