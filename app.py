@@ -629,22 +629,27 @@ def uploaded_file(filename):
 @app.route('/delete_file/<int:id>', methods=['POST'])
 @login_required
 def delete_file(id):
-    file = Upload.query.get(id)  # IDでファイルを取得
-    if file:
-        try:
-            # ファイルが存在すれば削除
-            if os.path.exists(file.filepath):
-                os.remove(file.filepath)
-            # データベースからエントリを削除
-            db.session.delete(file)
-            db.session.commit()
-            flash('ファイルが削除されました')
-        except Exception as e:
-            flash(f'ファイルの削除中にエラーが発生しました: {e}')
-    else:
-        flash('データベースにファイルが見つかりませんでした。')
+    file = Upload.query.get_or_404(id)
+    try:
+        # ファイルが存在すれば削除
+        if os.path.exists(file.filepath):
+            os.remove(file.filepath)
+        # データベースからエントリを削除
+        db.session.delete(file)
+        db.session.commit()
+        
+        # AJAXリクエストの場合はJSONレスポンスを返す
+        if request.headers.get('Content-Type') == 'application/json':
+            return jsonify({'success': True, 'message': 'ファイルが削除されました'})
+        
+        flash('ファイルが削除されました')
+    except Exception as e:
+        # エラーハンドリング
+        if request.headers.get('Content-Type') == 'application/json':
+            return jsonify({'success': False, 'message': str(e)}), 500
+        flash(f'ファイルの削除中にエラーが発生しました: {e}')
 
-    # 元のページにリダイレクト
+    # 通常のフォームサブミットの場合は元のページにリダイレクト
     return redirect(request.referrer or url_for('upload_file'))
 
 # robots.txtの設定（検索エンジンによるインデックスを防止）
