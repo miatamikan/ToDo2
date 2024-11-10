@@ -1,46 +1,112 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>タスクを編集</title>
-    <meta name="robots" content="noindex">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-</head>
-<body>
-<div class="container mt-5">
-    <h1>タスクを編集</h1>
-    <a href="/" class="btn btn-secondary mb-3">トップページに戻る</a>
-    <form method="POST" enctype="multipart/form-data" action="{{ url_for('edit_task', id=task.id, person_id=person_id, sort=sort_option) }}">
-        <div class="form-group">
-            <label for="content">タスクの内容</label>
-            <textarea id="content" name="content" class="form-control" rows="20" required>{{ task.content }}</textarea>
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5 max-w-2xl mx-auto">
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">タスクを編集</h1>
+            <a href="{{ url_for('index') }}" class="text-gray-600 hover:text-gray-800">
+                <i class="fas fa-times"></i>
+            </a>
         </div>
-        <div class="form-group">
-            <label for="person_id">担当者</label>
-            <select id="person_id" name="person_id" class="form-control">
-                <option value="">未割り当て</option>
-                {% for person in people %}
-                <option value="{{ person.id }}" {% if task.person_id == person.id %}selected{% endif %}>{{ person.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <!-- フォロー日を追加 -->
-        <div class="form-group">
-            <label for="follow_up_date">フォロー日</label>
-            <input type="date" id="follow_up_date" name="follow_up_date" class="form-control" value="{% if task.follow_up_date %}{{ task.follow_up_date.strftime('%Y-%m-%d') }}{% endif %}">
-        </div>
-        <div class="form-check">
-            <input type="checkbox" class="form-check-input" id="priority" name="priority">
-            <label class="form-check-label" for="priority">優先度を上げる</label>
-        </div>
-        <br>
-        <!-- ファイルアップロードフィールドを追加 -->
-        <div class="form-group">
-            <label for="files">添付ファイル</label>
-            <input type="file" id="files" name="files" class="form-control" multiple>
-        </div>
-        <button type="submit" class="btn btn-primary">更新</button>
-    </form>
+
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            <!-- タイトル -->
+            <div class="space-y-2">
+                <label for="title" class="block text-sm font-medium text-gray-700">タイトル</label>
+                <input type="text" id="title" name="title" value="{{ task.title }}" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- タスクの内容 -->
+            <div class="space-y-2">
+                <label for="content" class="block text-sm font-medium text-gray-700">タスクの内容</label>
+                <textarea id="content" name="content" rows="4" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">{{ task.content }}</textarea>
+            </div>
+
+            <!-- ステータス -->
+            <div class="space-y-2">
+                <label for="status" class="block text-sm font-medium text-gray-700">ステータス</label>
+                <select id="status" name="status" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="not_started" {% if task.status == 'not_started' %}selected{% endif %}>未着手</option>
+                    <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>進行中</option>
+                    <option value="on_hold" {% if task.status == 'on_hold' %}selected{% endif %}>保留</option>
+                    <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>完了</option>
+                </select>
+            </div>
+
+            <!-- 担当者選択 -->
+            <div class="space-y-2">
+                <label for="person_id" class="block text-sm font-medium text-gray-700">担当者</label>
+                <select id="person_id" name="person_id"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">未割り当て</option>
+                    {% for person in people %}
+                    <option value="{{ person.id }}" {% if task.person_id == person.id %}selected{% endif %}>
+                        {{ person.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- フォロー日 -->
+            <div class="space-y-2">
+                <label for="follow_up_date" class="block text-sm font-medium text-gray-700">フォロー日</label>
+                <input type="date" id="follow_up_date" name="follow_up_date"
+                    value="{{ task.follow_up_date.strftime('%Y-%m-%d') if task.follow_up_date else '' }}"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- 優先度 -->
+            <div class="flex items-center space-x-2">
+                <input type="checkbox" id="priority" name="priority"
+                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                <label for="priority" class="text-sm font-medium text-gray-700">優先度を上げる</label>
+            </div>
+
+            <!-- 既存の添付ファイル -->
+            {% if task.uploads %}
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">現在の添付ファイル</label>
+                <div class="space-y-2">
+                    {% for upload in task.uploads %}
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                        <a href="{{ upload.url }}" class="text-blue-600 hover:text-blue-800">
+                            {{ upload.filename }}
+                        </a>
+                        <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" class="inline">
+                            <button type="submit" 
+                                class="text-red-600 hover:text-red-800"
+                                onclick="return confirm('このファイルを削除してもよろしいですか？')">
+                                削除
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 新規ファイルアップロード -->
+            <div class="space-y-2">
+                <label for="files" class="block text-sm font-medium text-gray-700">新規添付ファイル</label>
+                <input type="file" id="files" name="files" multiple
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- 送信ボタン -->
+            <div class="flex justify-end space-x-4">
+                <a href="{{ url_for('index', person_id=person_id, sort=sort_option) }}"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                    キャンセル
+                </a>
+                <button type="submit"
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                    更新
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
-</body>
-</html>
+{% endblock %}
