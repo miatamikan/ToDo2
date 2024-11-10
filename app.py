@@ -653,4 +653,4 @@ def robots_txt():
     return "User-agent: *\nDisallow: /", 200, {'Content-Type': 'text/plain'}
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
