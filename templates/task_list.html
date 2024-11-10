@@ -14,19 +14,15 @@
                     {{ task.content | safe }}
                 </div>
 
-                <div class="task-details mt-3">
-                    {% if task.person %}
-                    <div><strong>担当者:</strong> {{ task.person.name }}</div>
-                    {% else %}
-                    <div><strong>担当者:</strong> 未割り当て</div>
-                    {% endif %}
-                    <div><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}</div>
-                    <div><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}</div>
-                    
-                    <!-- 進捗状況を追加 -->
-                    <div class="mt-2">
-                        <strong>進捗状況:</strong>
-                        <span class="badge {% if task.status == 'not_started' %}badge-secondary
+                {% if task.person %}
+                <br><strong>担当者:</strong> {{ task.person.name }}
+                {% else %}
+                <br><strong>担当者:</strong> 未割り当て
+                {% endif %}
+                <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
+                <br><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
+                <br><strong>進捗状況:</strong>
+                <span class="badge {% if task.status == 'not_started' %}badge-secondary
                                          {% elif task.status == 'in_progress' %}badge-primary
                                          {% elif task.status == 'on_hold' %}badge-warning
                                          {% elif task.status == 'completed' %}badge-success
@@ -128,12 +124,6 @@
         color: #2c3e50;
         border-bottom: 2px solid #eee;
         padding-bottom: 0.5rem;
-    }
-    .task-details {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 0.25rem;
-        margin-top: 1rem;
     }
     .task-details > div {
         margin-bottom: 0.5rem;
