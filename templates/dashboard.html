@@ -11,8 +11,9 @@
 {% for person in people %}
 <div class="tab" id="tab-{{ person.id }}">
     <h2>{{ person.name }}のタスク</h2>
-    {% if person.tasks %}
-    {% for task in person.tasks %}
+    {% set sorted_tasks = person.sorted_tasks_title %}
+    {% if sorted_tasks %}
+    {% for task in sorted_tasks %}
     {% set followup_class = task.follow_up_date|followup_style(today) %}
     <div class="task {{ followup_class }}">
         <!-- ステータスボタンの表示 -->
