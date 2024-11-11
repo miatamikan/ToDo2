@@ -15,7 +15,7 @@
         body {
             background-color: #121212;
             color: #e0e0e0;
-            font-family: 'Orbitron', sans-serif;
+            font-family: 'Noto Sans JP', 'ヒラギノ角ゴ Pro', 'メイリオ', '游ゴシック', 'Courier New', Courier, monospace;
         }
         /* レイアウトをフレックスボックスに変更 */
         .container-fluid {
@@ -58,7 +58,8 @@
             border: none;
             color: #e0e0e0;
             padding: 10px 15px;
-            font-family: 'Orbitron', sans-serif;
+            /* フォントファミリーをデフォルトに設定 */
+            font-family: inherit;
         }
         .list-group-item:hover, .list-group-item.active {
             background-color: #00bcd4;
@@ -73,6 +74,7 @@
             background-color: #00bcd4;
             color: #121212;
             border: none;
+            font-family: 'Orbitron', sans-serif;
         }
         /* ナビバーのスタイル */
         .navbar {
@@ -84,9 +86,11 @@
             font-weight: bold;
             color: #00bcd4;
             text-shadow: 0 0 10px #00bcd4;
+            font-family: 'Orbitron', sans-serif;
         }
         .nav-link {
             color: #e0e0e0;
+            font-family: inherit;
         }
         .nav-link:hover {
             color: #00bcd4;
@@ -105,6 +109,7 @@
             font-size: 30px;
             box-shadow: 0 5px 15px rgba(0,188,212,0.4);
             transition: background-color 0.3s;
+            font-family: inherit;
         }
         .floating-button:hover {
             background-color: #0097a7;
@@ -114,6 +119,7 @@
             background-color: #1f1f1f;
             border: 1px solid #3d3d3d;
             color: #e0e0e0;
+            font-family: inherit;
         }
         #task-search::placeholder {
             color: #757575;
@@ -122,6 +128,7 @@
         .btn-primary {
             background-color: #00bcd4;
             border: none;
+            font-family: inherit;
         }
         .btn-primary:hover {
             background-color: #0097a7;
@@ -132,6 +139,7 @@
             padding: 15px;
             transition: background-color 0.3s;
             color: #e0e0e0;
+            font-family: inherit;
         }
         /* タスク行の交互色付け */
         #task-list li:nth-child(odd) {
@@ -146,8 +154,14 @@
             color: #e0e0e0;
         }
         /* メインコンテンツ内のタイトルの色を調整 */
-        #main-content-area h1, #main-content-area h2, #main-content-area h3, #main-content-area h4, #main-content-area h5, #main-content-area h6 {
+        #main-content-area h1, 
+        #main-content-area h2, 
+        #main-content-area h3, 
+        #main-content-area h4, 
+        #main-content-area h5, 
+        #main-content-area h6 {
             color: #00bcd4;
+            font-family: inherit;
         }
         /* <pre>タグのスタイルを追加 */
         pre {
@@ -177,6 +191,7 @@
             border-radius: 4px;
             cursor: pointer;
             border: none;
+            font-family: inherit;
         }
         .status-button.completed {
             background-color: #4caf50;
