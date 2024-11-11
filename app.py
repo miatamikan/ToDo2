@@ -683,11 +683,8 @@ def update_status(task_id):
     if not session.get('logged_in'):
         return jsonify({'status': 'failed', 'message': 'Unauthorized'}), 401
     task = Task.query.get_or_404(task_id)
-    status_cycle = ['pending', 'in_progress', 'completed']
-    try:
-        current_index = status_cycle.index(task.status)
-    except ValueError:
-        current_index = -1  # 未定義のステータスの場合
+    status_cycle = ['not_started', 'pending', 'in_progress', 'completed']
+    current_index = status_cycle.index(task.status)
     next_status = status_cycle[(current_index + 1) % len(status_cycle)]
     task.status = next_status
     task.update_last_updated()
