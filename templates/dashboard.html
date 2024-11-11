@@ -25,7 +25,19 @@
             font-weight: bold;
             background-color: #eee;
         }
-        /* ステータスボタンのスタイル */
+        /* タスクのスタイル */
+        .task {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+        }
+        .task.today {
+            background-color: #FFEB3B; /* 当日 */
+        }
+        .task.yesterday {
+            background-color: #FFCDD2; /* 前日 */
+        }
         .status-button {
             padding: 5px 10px;
             border-radius: 3px;
@@ -43,31 +55,17 @@
         .status-button.completed {
             background-color: green;
         }
-        /* フォロー日のハイライト */
-        .task.today {
-            background-color: #FFEB3B; /* 黄色 */
+        .task-id {
+            margin-right: 10px;
         }
-        .task.yesterday {
-            background-color: #FFCDD2; /* 赤 */
-        }
-        .task {
-            padding: 10px;
-            border-bottom: 1px solid #ccc;
-        }
-        /* その他のスタイル */
         .task-title {
-            font-weight: bold;
-        }
-        .attachment-count {
-            margin-left: 10px;
-            color: #666;
+            margin-right: 10px;
+            flex-grow: 1;
         }
         .follow-up-date {
-            margin-left: 10px;
-            color: #666;
+            margin-right: 10px;
         }
         .task-link {
-            margin-left: 10px;
             color: blue;
             text-decoration: underline;
             cursor: pointer;
@@ -106,9 +104,12 @@
             });
         }
 
-        function loadContent(url, elementId) {
-            // AJAXでコンテンツを読み込む処理を実装
-            alert('URL: ' + url + '\n要素ID: ' + elementId);
+        function loadContent(url, hash) {
+            if (parent && parent.loadContent) {
+                parent.loadContent(url, hash);
+            } else {
+                window.location.href = url + '#' + hash;
+            }
         }
 
         // ページロード時に最初のタブを表示
@@ -132,22 +133,29 @@
     {% for person in people %}
     <div class="tab" id="tab-{{ person.id }}">
         <h2>{{ person.name }}のタスク</h2>
+        {% if person.tasks %}
         {% for task in person.tasks %}
         {% set followup_class = task.follow_up_date|followup_style(today) %}
         <div class="task {{ followup_class }}">
+            <!-- ステータス -->
             <button id="status-button-{{ task.id }}" onclick="cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
                 {% if task.status == 'completed' %}完了
                 {% elif task.status == 'in_progress' %}進行中
                 {% else %}保留中{% endif %}
             </button>
+            <!-- タスクID -->
+            <span class="task-id">ID: {{ task.id }}</span>
+            <!-- タイトル -->
             <span class="task-title">{{ task.title }}</span>
+            <!-- フォロー日 -->
             <span class="follow-up-date">フォロー日: {{ task.follow_up_date|format_date }}</span>
-            <span class="attachment-count">添付ファイル: {{ task.uploads|length }}個</span>
+            <!-- タスクへのリンク -->
             <a href="#" class="task-link" onclick="loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">タスクを見る</a>
         </div>
+        {% endfor %}
         {% else %}
         <p>タスクがありません。</p>
-        {% endfor %}
+        {% endif %}
     </div>
     {% endfor %}
 </body>
