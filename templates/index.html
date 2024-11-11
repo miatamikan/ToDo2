@@ -236,8 +236,8 @@
     <!-- Sortable.js -->
     <script src="{{ url_for('static', filename='js/Sortable.min.js') }}"></script>
     <script>
-        // コンテンツをロードする関数
-        function loadContent(url, hash) {
+        // コンテンツをロードする関数をグローバルに設定
+        window.loadContent = function(url, hash) {
             let sortOption = document.getElementById('sort-option').value;
             let fullUrl = url + '?sort=' + sortOption;
             $.get(fullUrl, function(data) {
@@ -265,10 +265,10 @@
                 // タスクリストの初期化
                 initTaskList();
             });
-        }
+        };
 
-        // 検索機能
-        function applySearchFilter() {
+        // 検索機能をグローバルに設定（必要に応じて）
+        window.applySearchFilter = function() {
             let filter = document.getElementById('task-search').value.trim().toLowerCase();
             let keywords = filter.split(/\s+/);
             let tasks = document.querySelectorAll('#task-list li');
@@ -277,8 +277,7 @@
                 let match = keywords.every(keyword => taskText.includes(keyword));
                 task.style.display = match ? '' : 'none';
             });
-        }
-        document.getElementById('task-search').addEventListener('input', applySearchFilter);
+        };
 
         // サイドバーの担当者リストをソート可能に
         var personList = document.getElementById('person-list');
@@ -311,17 +310,17 @@
             if (!currentUrl) {
                 currentUrl = '/all_tasks';
             }
-            loadContent(currentUrl);
+            window.loadContent(currentUrl);
         });
 
-        // タスクリストの初期化関数
-        function initTaskList() {
+        // タスクリストの初期化関数をグローバルに設定（必要に応じて）
+        window.initTaskList = function() {
             // 折りたたみ機能
             document.querySelectorAll('.task-item').forEach(function(taskItem) {
                 var contentDiv = taskItem.querySelector('.task-content');
                 var toggleButton = taskItem.querySelector('.btn-toggle-task');
 
-                if (contentDiv.scrollHeight > 400) {
+                if (contentDiv && contentDiv.scrollHeight > 400) {
                     toggleButton.style.display = 'block';
 
                     toggleButton.addEventListener('click', function() {
@@ -338,36 +337,38 @@
 
             // タスクの並び替え機能
             var taskList = document.getElementById('task-list');
-            new Sortable(taskList, {
-                animation: 150,
-                onEnd: function (evt) {
-                    let tasks = Array.from(taskList.children).map(task => task.dataset.taskId);
-                    fetch('/update_task_order', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({task_order: tasks})
-                    }).then(response => {
-                        if (!response.ok) {
-                            throw new Error('Failed to update task order');
-                        }
-                        return response.json();
-                    })
-                    .then(data => console.log(data))
-                    .catch(error => alert('タスクの順序更新に失敗しました: ' + error.message));
-                }
-            });
-        }
+            if (taskList) {
+                new Sortable(taskList, {
+                    animation: 150,
+                    onEnd: function (evt) {
+                        let tasks = Array.from(taskList.children).map(task => task.dataset.taskId);
+                        fetch('/update_task_order', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({task_order: tasks})
+                        }).then(response => {
+                            if (!response.ok) {
+                                throw new Error('Failed to update task order');
+                            }
+                            return response.json();
+                        })
+                        .then(data => console.log(data))
+                        .catch(error => alert('タスクの順序更新に失敗しました: ' + error.message));
+                    }
+                });
+            }
+        };
 
-        // URLコピー機能
-        function copyToClipboard(url) {
+        // URLコピー機能をグローバルに設定（必要に応じて）
+        window.copyToClipboard = function(url) {
             navigator.clipboard.writeText(url).then(function() {
                 alert('URLがクリップボードにコピーされました');
             }, function(err) {
                 alert('コピーに失敗しました: ' + err);
             });
-        }
+        };
 
         // ページ読み込み時に初期コンテンツをロード
         $(document).ready(function() {
@@ -384,8 +385,11 @@
 
             // ハッシュを取得
             let hash = window.location.hash.substring(1);
-            loadContent(initialUrl, hash);
+            window.loadContent(initialUrl, hash);
         });
+
+        // 検索窓のイベントリスナーをグローバルに設定（必要に応じて）
+        document.getElementById('task-search').addEventListener('input', window.applySearchFilter);
     </script>
 </body>
 </html>
