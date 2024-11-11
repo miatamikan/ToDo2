@@ -322,17 +322,14 @@
                 if (data.status == 'success') {
                     var button = document.getElementById('status-button-' + taskId);
                     var newStatus = data.new_status;
-                    button.innerText = newStatus === 'completed' ? '完了' :
-                                       newStatus === 'in_progress' ? '進行中' :
+                    button.innerText = newStatus === 'not_started' ? '未着手' :
                                        newStatus === 'pending' ? '保留中' :
-                                       newStatus === 'not_started' ? '未着手' : '不明';
+                                       newStatus === 'in_progress' ? '進行中' :
+                                       newStatus === 'completed' ? '完了' : '不明';
                     button.className = 'status-button ' + newStatus;
                 } else {
                     alert('ステータスの更新に失敗しました');
                 }
-            })
-            .catch(error => {
-                alert('ステータスの更新中にエラーが発生しました: ' + error.message);
             });
         };
 
