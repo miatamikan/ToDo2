@@ -1,207 +1,131 @@
 <!-- templates/dashboard.html -->
 
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>ダッシュボード</title>
-    <!-- Google Fontsのリンクを追加 -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
-    <style>
-        /* ダッシュボード専用のフォントファミリーを適用 */
-        .dashboard-container {
-            font-family: 'Noto Sans JP', 'ヒラギノ角ゴ Pro', 'メイリオ', '游ゴシック', 'Courier New', Courier, monospace;
-        }
-
-        /* タブのスタイル */
-        .tab {
-            display: none;
-        }
-        .tab.active {
-            display: block;
-        }
-        .tab-buttons {
-            display: flex;
-            margin-bottom: 10px;
-        }
-        .tab-button {
-            padding: 10px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            margin-right: 5px;
-        }
-        .tab-button.active {
-            font-weight: bold;
-            background-color: #eee;
-        }
-        /* タスクのスタイル */
-        .task {
-            padding: 10px;
-            border-bottom: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-        }
-        /* フォロー日の背景色と文字色 */
-        .task.today {
-            background-color: #FFCDD2; /* 薄い赤色 */
-            color: black;
-        }
-        .task.three_days_ago {
-            background-color: #FFEBEE; /* さらに薄い赤色 */
-            color: black;
-        }
-        /* ステータスボタンのスタイル */
-        .status-button {
-            width: 100px; /* 幅を固定して左端を揃える */
-            padding: 5px 10px;
-            border-radius: 3px;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-        .status-button.not_started {
-            background-color: gray;
-        }
-        .status-button.pending {
-            background-color: orange;
-        }
-        .status-button.in_progress {
-            background-color: blue;
-        }
-        .status-button.completed {
-            background-color: green;
-        }
-        .task-title-link {
-            margin-right: 10px;
-            flex-grow: 1;
-            text-decoration: none;
-            color: white; /* 白い文字 */
-        }
-        .task-title-link:hover {
-            text-decoration: underline;
-        }
-        .follow-up-date {
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-        /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
-        .task.today .task-title-link,
-        .task.three_days_ago .task-title-link {
-            color: black; /* 黒い文字 */
-        }
-    </style>
-</head>
-<body>
-    <div class="dashboard-container">
-        <h1>ダッシュボード</h1>
-        <div class="tab-buttons">
-            {% for person in people %}
-            <div class="tab-button" id="button-{{ person.id }}" onclick="window.showTab({{ person.id }})">
-                {{ person.name }}
-            </div>
-            {% endfor %}
-        </div>
-        {% for person in people %}
-        <div class="tab" id="tab-{{ person.id }}">
-            <h2>{{ person.name }}のタスク</h2>
-            {% set sorted_tasks = person.sorted_tasks_title %}
-            {% if sorted_tasks %}
-            {% for task in sorted_tasks %}
-            {% set followup_class = task.follow_up_date|followup_style(today) %}
-            <div class="task {{ followup_class }}">
-                <!-- ステータスボタンの表示 -->
-                <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
-                    {% if task.status == 'not_started' %}未着手
-                    {% elif task.status == 'pending' %}保留中
-                    {% elif task.status == 'in_progress' %}進行中
-                    {% elif task.status == 'completed' %}完了
-                    {% else %}不明{% endif %}
-                </button>
-
-                <!-- タイトルをリンクに変更 -->
-                <a href="#" class="task-title-link" onclick="window.loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">
-                    {{ task.title }}
-                </a>
-
-                <!-- フォロー日 -->
-                <span class="follow-up-date">フォロー日: {{ task.follow_up_date|format_date }}</span>
-            </div>
-            {% endfor %}
-            {% else %}
-            <p>タスクがありません。</p>
-            {% endif %}
-        </div>
-        {% endfor %}
+<h1>ダッシュボード</h1>
+<div class="tab-buttons">
+    {% for person in people %}
+    <div class="tab-button" id="button-{{ person.id }}" onclick="window.showTab({{ person.id }})">
+        {{ person.name }}
     </div>
+    {% endfor %}
+</div>
+{% for person in people %}
+<div class="tab" id="tab-{{ person.id }}">
+    <h2>{{ person.name }}のタスク</h2>
+    {% set sorted_tasks = person.sorted_tasks_title %}
+    {% if sorted_tasks %}
+    {% for task in sorted_tasks %}
+    {% set followup_class = task.follow_up_date|followup_style(today) %}
+    <div class="task {{ followup_class }}">
+        <!-- ステータスボタンの表示 -->
+        <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
+            {% if task.status == 'not_started' %}未着手
+            {% elif task.status == 'pending' %}保留中
+            {% elif task.status == 'in_progress' %}進行中
+            {% elif task.status == 'completed' %}完了
+            {% else %}不明{% endif %}
+        </button>
 
-    <!-- JavaScriptの追加 -->
-    <script>
-        // 現在表示されているタブを追跡
-        let currentTab = null;
+        <!-- タイトルをリンクに変更 -->
+        <a href="#" class="task-title-link" onclick="window.loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">
+            {{ task.title }}
+        </a>
 
-        function showTab(personId) {
-            // すべてのタブとタブボタンから 'active' クラスを削除
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
+        <!-- フォロー日 -->
+        <span class="follow-up-date">フォロー日: {{ task.follow_up_date|format_date }}</span>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>タスクがありません。</p>
+    {% endif %}
+</div>
+{% endfor %}
 
-            // 選択されたタブとタブボタンに 'active' クラスを追加
-            document.getElementById(`tab-${personId}`).classList.add('active');
-            document.getElementById(`button-${personId}`).classList.add('active');
+<!-- 必要なスタイルを追加 -->
+<style>
+    /* Google Fonts のインポート */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap');
 
-            // 現在のタブを更新
-            currentTab = personId;
-        }
+    /* フォントファミリーの適用 */
+    * {
+        font-family: 'Noto Sans JP', 'ヒラギノ角ゴ Pro', 'メイリオ', '游ゴシック', 'Courier New', Courier, monospace;
+    }
 
-        function cycleStatus(taskId) {
-            const button = document.getElementById(`status-button-${taskId}`);
-            const statuses = ['not_started', 'pending', 'in_progress', 'completed'];
-            let currentStatus = button.classList.contains('not_started') ? 'not_started' :
-                                button.classList.contains('pending') ? 'pending' :
-                                button.classList.contains('in_progress') ? 'in_progress' :
-                                button.classList.contains('completed') ? 'completed' : 'unknown';
-            let nextStatusIndex = (statuses.indexOf(currentStatus) + 1) % statuses.length;
-            let nextStatus = statuses[nextStatusIndex];
-
-            // クラスの更新
-            button.classList.remove(currentStatus);
-            button.classList.add(nextStatus);
-
-            // テキストの更新
-            switch(nextStatus) {
-                case 'not_started':
-                    button.textContent = '未着手';
-                    break;
-                case 'pending':
-                    button.textContent = '保留中';
-                    break;
-                case 'in_progress':
-                    button.textContent = '進行中';
-                    break;
-                case 'completed':
-                    button.textContent = '完了';
-                    break;
-                default:
-                    button.textContent = '不明';
-            }
-
-            // 必要に応じてサーバーに変更を送信する処理を追加
-        }
-
-        function loadContent(url, taskId) {
-            // AJAXリクエストなどでコンテンツを読み込む処理を実装
-            // ここでは単純にアラートを表示する例を示します
-            alert(`タスクID: ${taskId} の詳細をロードします。URL: ${url}`);
-        }
-
-        // ページ読み込み時に最初のタブを表示
-        window.onload = function() {
-            const firstPerson = {{ people[0].id if people else 'null' }};
-            if (firstPerson) {
-                showTab(firstPerson);
-            }
-        }
-    </script>
-</body>
-</html>
+    /* タブのスタイル */
+    .tab {
+        display: none;
+    }
+    .tab.active {
+        display: block;
+    }
+    .tab-buttons {
+        display: flex;
+        margin-bottom: 10px;
+    }
+    .tab-button {
+        padding: 10px;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        margin-right: 5px;
+    }
+    .tab-button.active {
+        font-weight: bold;
+        background-color: #eee;
+    }
+    /* タスクのスタイル */
+    .task {
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        display: flex;
+        align-items: center;
+    }
+    /* フォロー日の背景色と文字色 */
+    .task.today {
+        background-color: #FFCDD2; /* 薄い赤色 */
+        color: black;
+    }
+    .task.three_days_ago {
+        background-color: #FFEBEE; /* さらに薄い赤色 */
+        color: black;
+    }
+    /* ステータスボタンのスタイル */
+    .status-button {
+        width: 100px; /* 幅を固定して左端を揃える */
+        padding: 5px 10px;
+        border-radius: 3px;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+    .status-button.not_started {
+        background-color: gray;
+    }
+    .status-button.pending {
+        background-color: orange;
+    }
+    .status-button.in_progress {
+        background-color: blue;
+    }
+    .status-button.completed {
+        background-color: green;
+    }
+    .task-title-link {
+        margin-right: 10px;
+        flex-grow: 1;
+        text-decoration: none;
+        color: white; /* 白い文字 */
+    }
+    .task-title-link:hover {
+        text-decoration: underline;
+    }
+    .follow-up-date {
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+    /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
+    .task.today .task-title-link,
+    .task.three_days_ago .task-title-link {
+        color: black; /* 黒い文字 */
+    }
+</style>
