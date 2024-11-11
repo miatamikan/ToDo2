@@ -42,90 +42,79 @@
 
 <!-- 必要なスタイルを追加 -->
 <style>
-    /* Google Fonts のインポート */
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap');
-
-    /* フォントファミリーの適用 */
-    * {
-        font-family: 'Noto Sans JP', 'ヒラギノ角ゴ Pro', 'メイリオ', '游ゴシック', 'Courier New', Courier, monospace;
-    }
-
-    /* タブのスタイル */
-    .tab {
-        display: none;
-    }
-    .tab.active {
-        display: block;
-    }
-    .tab-buttons {
-        display: flex;
-        margin-bottom: 10px;
-    }
-    .tab-button {
-        padding: 10px;
-        cursor: pointer;
-        border: 1px solid #ccc;
-        margin-right: 5px;
-    }
-    .tab-button.active {
-        font-weight: bold;
-        background-color: #eee;
-    }
-    /* タスクのスタイル */
-    .task {
-        padding: 10px;
-        border-bottom: 1px solid #ccc;
-        display: flex;
-        align-items: center;
-    }
-    /* フォロー日の背景色と文字色 */
-    .task.today {
-        background-color: #FFCDD2; /* 薄い赤色 */
-        color: black;
-    }
-    .task.three_days_ago {
-        background-color: #FFEBEE; /* さらに薄い赤色 */
-        color: black;
-    }
-    /* ステータスボタンのスタイル */
-    .status-button {
-        width: 100px; /* 幅を固定して左端を揃える */
-        padding: 5px 10px;
-        border-radius: 3px;
-        color: #fff;
-        border: none;
-        cursor: pointer;
-        margin-right: 10px;
-        flex-shrink: 0;
-    }
-    .status-button.not_started {
-        background-color: gray;
-    }
-    .status-button.pending {
-        background-color: orange;
-    }
-    .status-button.in_progress {
-        background-color: blue;
-    }
-    .status-button.completed {
-        background-color: green;
-    }
-    .task-title-link {
-        margin-right: 10px;
-        flex-grow: 1;
-        text-decoration: none;
-        color: white; /* 白い文字 */
-    }
-    .task-title-link:hover {
-        text-decoration: underline;
-    }
-    .follow-up-date {
-        margin-right: 10px;
-        flex-shrink: 0;
-    }
-    /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
-    .task.today .task-title-link,
-    .task.three_days_ago .task-title-link {
-        color: black; /* 黒い文字 */
-    }
+        /* タブのスタイル */
+        .tab {
+            display: none;
+        }
+        .tab.active {
+            display: block;
+        }
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .tab-button {
+            padding: 10px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            margin-right: 5px;
+        }
+        .tab-button.active {
+            font-weight: bold;
+            background-color: #eee;
+        }
+        /* タスクのスタイル */
+        .task {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+        }
+        /* フォロー日の背景色と文字色 */
+        .task.today {
+            background-color: #FFCDD2; /* 薄い赤色 */
+            color: black;
+        }
+        .task.three_days_ago {
+            background-color: #FFEBEE; /* さらに薄い赤色 */
+            color: black;
+        }
+        /* ステータスボタンのスタイル */
+        .status-button {
+            width: 100px; /* 幅を固定して左端を揃える */
+            padding: 5px 10px;
+            border-radius: 3px;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .status-button.pending {
+            background-color: orange;
+        }
+        .status-button.in_progress {
+            background-color: blue;
+        }
+        .status-button.completed {
+            background-color: green;
+        }
+        .task-title-link {
+            margin-right: 10px;
+            flex-grow: 1;
+            text-decoration: none;
+            color: white; /* 白い文字 */
+        }
+        .task-title-link:hover {
+            text-decoration: underline;
+        }
+        .follow-up-date {
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
+        .task.today .task-title-link,
+        .task.three_days_ago .task-title-link {
+            color: black; /* 黒い文字 */
+        }
 </style>
