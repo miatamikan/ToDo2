@@ -15,14 +15,15 @@
     {% for task in person.tasks %}
     {% set followup_class = task.follow_up_date|followup_style(today) %}
     <div class="task {{ followup_class }}">
-        <!-- ステータス -->
+        <!-- ステータスボタンの表示 -->
         <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
-            {% if task.status == 'completed' %}完了
-            {% elif task.status == 'in_progress' %}進行中
+            {% if task.status == 'not_started' %}未着手
             {% elif task.status == 'pending' %}保留中
-            {% elif task.status == 'not_started' %}未着手
+            {% elif task.status == 'in_progress' %}進行中
+            {% elif task.status == 'completed' %}完了
             {% else %}不明{% endif %}
         </button>
+
         <!-- タスクID -->
         <span class="task-id">ID: {{ task.id }}</span>
         <!-- タイトル -->
