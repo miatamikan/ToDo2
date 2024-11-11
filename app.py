@@ -175,7 +175,11 @@ class Person(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False, unique=True)
     order = db.Column(db.Integer, nullable=False, default=0)
-    tasks = db.relationship('Task', backref='person', lazy=True, order_by='Task.priority')
+    tasks = db.relationship('Task', backref='person', lazy='dynamic')  # order_byを削除し、lazyを'dynamic'に変更
+
+    @property
+    def sorted_tasks_title(self):
+        return self.tasks.order_by(Task.title).all()
 
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -673,6 +677,7 @@ def dashboard():
     people = Person.query.order_by(Person.order).all()
     today = datetime.now(pytz.timezone('Asia/Tokyo')).date()
     return render_template('dashboard.html', people=people, today=today)
+
 
 # タスクのステータスを更新するエンドポイントを追加
 @app.route('/update_status/<int:task_id>', methods=['POST'])
