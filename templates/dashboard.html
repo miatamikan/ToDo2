@@ -24,8 +24,11 @@
             {% else %}不明{% endif %}
         </button>
 
-        <!-- タイトル -->
-        <a href="/person_tasks/{{ task.person_id }}" class="task-title">{{ task.title }}</a>
+        <!-- タイトルをリンクに変更 -->
+        <a href="#" class="task-title-link" onclick="window.loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">
+            {{ task.title }}
+        </a>
+
         <!-- フォロー日 -->
         <span class="follow-up-date">フォロー日: {{ task.follow_up_date|format_date }}</span>
     </div>
@@ -66,19 +69,25 @@
             display: flex;
             align-items: center;
         }
+        /* フォロー日の背景色と文字色 */
         .task.today {
-            background-color: #FFDDDD; /* 当日 */
+            background-color: #FFCDD2; /* 薄い赤色 */
+            color: black;
         }
         .task.three_days_ago {
-            background-color: #FFECEC; /* 3日前 */
+            background-color: #FFEBEE; /* さらに薄い赤色 */
+            color: black;
         }
+        /* ステータスボタンのスタイル */
         .status-button {
+            width: 100px; /* 幅を固定して左端を揃える */
             padding: 5px 10px;
             border-radius: 3px;
             color: #fff;
             border: none;
             cursor: pointer;
             margin-right: 10px;
+            flex-shrink: 0;
         }
         .status-button.pending {
             background-color: orange;
@@ -89,16 +98,17 @@
         .status-button.completed {
             background-color: green;
         }
-        .task-title {
+        .task-title-link {
             margin-right: 10px;
             flex-grow: 1;
-            color: white; /* 白い文字 */
             text-decoration: none;
+            color: white; /* 白い文字 */
         }
-        .task-title:hover {
+        .task-title-link:hover {
             text-decoration: underline;
         }
         .follow-up-date {
             margin-right: 10px;
+            flex-shrink: 0;
         }
 </style>
