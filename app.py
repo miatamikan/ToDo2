@@ -11,6 +11,7 @@ from werkzeug.utils import secure_filename
 import re
 import unicodedata
 
+
 app = Flask(__name__)
 
 # ログインが必要なデコレータを作成
@@ -178,13 +179,13 @@ class Person(db.Model):
 
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)  # タイトルを追加
+    title = db.Column(db.String(200), nullable=False)  # タイトル
     content = db.Column(db.Text, nullable=False)
-    status = db.Column(db.String(20), nullable=False, default='not_started')  # ステータスを追加
+    status = db.Column(db.String(20), nullable=False, default='not_started')  # ステータス
     priority = db.Column(db.Integer, nullable=False)
     person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=True)
     last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    follow_up_date = db.Column(db.DateTime, nullable=True)  # フォロー日を追加
+    follow_up_date = db.Column(db.DateTime, nullable=True)  # フォロー日
 
     def update_last_updated(self):
         self.last_updated = datetime.utcnow()
@@ -281,14 +282,13 @@ def index():
 
 # 全タスクの取得
 @app.route('/all_tasks')
+@login_required
 def all_tasks():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
     sort_option = request.args.get('sort', 'priority')
     past_log_person = Person.query.filter_by(name='過去ログ').first()
     if sort_option == 'follow_up_date':
         tasks = Task.query.filter(Task.person_id != past_log_person.id).order_by(
-            nulls_last(Task.follow_up_date.asc())
+            db.case([(Task.follow_up_date != None, Task.follow_up_date)], else_=db.null())
         ).all()
     else:
         tasks = Task.query.filter(Task.person_id != past_log_person.id).order_by(Task.priority).all()
@@ -296,19 +296,17 @@ def all_tasks():
 
 # 担当者別タスクの取得
 @app.route('/person_tasks/<int:person_id>')
+@login_required
 def person_tasks(person_id):
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
     person = Person.query.get_or_404(person_id)
     sort_option = request.args.get('sort', 'priority')
     if sort_option == 'follow_up_date':
         tasks = Task.query.filter_by(person_id=person_id).order_by(
-            nulls_last(Task.follow_up_date.asc())
+            db.case([(Task.follow_up_date != None, Task.follow_up_date)], else_=db.null())
         ).all()
     else:
         tasks = Task.query.filter_by(person_id=person_id).order_by(Task.priority).all()
-    return render_template('task_list.html', tasks=tasks, person_name=person.name, person_id=person.id,
-                           sort_option=sort_option)
+    return render_template('task_list.html', tasks=tasks, person_name=person.name, person_id=person.id, sort_option=sort_option)
 
 # タスクの順序更新
 @app.route('/update_task_order', methods=['POST'])
@@ -670,21 +668,24 @@ def robots_txt():
 
 # ダッシュボードのルートを追加
 @app.route('/dashboard')
+@login_required
 def dashboard():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
     people = Person.query.order_by(Person.order).all()
     today = datetime.now(pytz.timezone('Asia/Tokyo')).date()
     return render_template('dashboard.html', people=people, today=today)
 
 # タスクのステータスを更新するエンドポイントを追加
 @app.route('/update_status/<int:task_id>', methods=['POST'])
+@login_required
 def update_status(task_id):
-    if not session.get('logged_in'):
-        return jsonify({'status': 'failed', 'message': 'Unauthorized'}), 401
     task = Task.query.get_or_404(task_id)
     status_cycle = ['not_started', 'pending', 'in_progress', 'completed']
-    current_index = status_cycle.index(task.status)
+    try:
+        current_index = status_cycle.index(task.status)
+    except ValueError:
+        # 不明なステータスの場合、'not_started' にリセット
+        task.status = 'not_started'
+        current_index = -1
     next_status = status_cycle[(current_index + 1) % len(status_cycle)]
     task.status = next_status
     task.update_last_updated()
