@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 import configparser
 import time
-from datetime import datetime
+from datetime import datetime, date
 import pytz
 from flask import send_from_directory
 from sqlalchemy import text, nulls_last
@@ -523,6 +523,17 @@ def format_date(value):
     else:
         return '未設定'
 
+# フォロー日のスタイルを決定するフィルタを追加
+@app.template_filter('followup_style')
+def followup_style(follow_up_date, today):
+    if follow_up_date:
+        diff = (follow_up_date.date() - today).days
+        if diff == 0:
+            return 'today'  # 当日
+        elif diff == -1:
+            return 'yesterday'  # 前日
+    return ''
+
 # ファイルサイズをフォーマットするフィルタを追加
 @app.template_filter('filesizeformat')
 def filesizeformat(value):
@@ -656,6 +667,32 @@ def delete_file(id):
 @app.route('/robots.txt')
 def robots_txt():
     return "User-agent: *\nDisallow: /", 200, {'Content-Type': 'text/plain'}
+
+# ダッシュボードのルートを追加
+@app.route('/dashboard')
+def dashboard():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    people = Person.query.order_by(Person.order).all()
+    today = datetime.now(pytz.timezone('Asia/Tokyo')).date()
+    return render_template('dashboard.html', people=people, today=today)
+
+# タスクのステータスを更新するエンドポイントを追加
+@app.route('/update_status/<int:task_id>', methods=['POST'])
+def update_status(task_id):
+    if not session.get('logged_in'):
+        return jsonify({'status': 'failed', 'message': 'Unauthorized'}), 401
+    task = Task.query.get_or_404(task_id)
+    status_cycle = ['pending', 'in_progress', 'completed']
+    try:
+        current_index = status_cycle.index(task.status)
+    except ValueError:
+        current_index = -1  # 未定義のステータスの場合
+    next_status = status_cycle[(current_index + 1) % len(status_cycle)]
+    task.status = next_status
+    task.update_last_updated()
+    db.session.commit()
+    return jsonify({'status': 'success', 'new_status': task.status})
 
 if __name__ == '__main__':
     app.run(debug=True)
