@@ -1,3 +1,5 @@
+<!-- templates/edit_task.html -->
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -19,8 +21,8 @@
             <label for="status">ステータス</label>
             <select id="status" name="status" class="form-control" required>
                 <option value="not_started" {% if task.status == 'not_started' %}selected{% endif %}>未着手</option>
+                <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>保留中</option>
                 <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>進行中</option>
-                <option value="on_hold" {% if task.status == 'on_hold' %}selected{% endif %}>保留</option>
                 <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>完了</option>
             </select>
         </div>
