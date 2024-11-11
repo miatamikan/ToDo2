@@ -20,7 +20,7 @@
                 {% endif %}
                 <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
                 <br><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
-                <strong>進捗状況:</strong>
+                <br><strong>進捗状況:</strong>
                 {% if task.status == 'not_started' %}未着手
                 {% elif task.status == 'pending' %}保留中
                 {% elif task.status == 'in_progress' %}進行中
