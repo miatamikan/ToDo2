@@ -24,14 +24,10 @@
             {% else %}不明{% endif %}
         </button>
 
-        <!-- タスクID -->
-        <span class="task-id">ID: {{ task.id }}</span>
         <!-- タイトル -->
-        <span class="task-title">{{ task.title }}</span>
+        <a href="/person_tasks/{{ task.person_id }}" class="task-title">{{ task.title }}</a>
         <!-- フォロー日 -->
         <span class="follow-up-date">フォロー日: {{ task.follow_up_date|format_date }}</span>
-        <!-- タスクへのリンク -->
-        <a href="#" class="task-link" onclick="window.loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">タスクを見る</a>
     </div>
     {% endfor %}
     {% else %}
@@ -71,10 +67,10 @@
             align-items: center;
         }
         .task.today {
-            background-color: #FFEB3B; /* 当日 */
+            background-color: #FFDDDD; /* 当日 */
         }
-        .task.yesterday {
-            background-color: #FFCDD2; /* 前日 */
+        .task.three_days_ago {
+            background-color: #FFECEC; /* 3日前 */
         }
         .status-button {
             padding: 5px 10px;
@@ -93,19 +89,16 @@
         .status-button.completed {
             background-color: green;
         }
-        .task-id {
-            margin-right: 10px;
-        }
         .task-title {
             margin-right: 10px;
             flex-grow: 1;
+            color: white; /* 白い文字 */
+            text-decoration: none;
+        }
+        .task-title:hover {
+            text-decoration: underline;
         }
         .follow-up-date {
             margin-right: 10px;
-        }
-        .task-link {
-            color: blue;
-            text-decoration: underline;
-            cursor: pointer;
         }
 </style>
