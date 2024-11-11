@@ -189,10 +189,15 @@
         <!-- サイドバー -->
         <div class="sidebar">
             <h3>INDEX</h3>
+            <!-- サイドバーにダッシュボードへのリンクを追加 -->
             <ul id="person-list" class="list-group">
+                <li class="list-group-item">
+                    <a href="#" onclick="loadContent('/dashboard')">ダッシュボード</a>
+                </li>
                 <li class="list-group-item">
                     <a href="#" onclick="loadContent('/all_tasks')">全タスク</a>
                 </li>
+                <!-- 既存の担当者リスト -->
                 {% for person in people %}
                 <li class="list-group-item" data-person-id="{{ person.id }}">
                     <a href="#" onclick="loadContent('/person_tasks/{{ person.id }}')">{{ person.name }}</a>
