@@ -1,10 +1,44 @@
 <!-- templates/dashboard.html -->
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>ダッシュボード</title>
-    <style>
+
+<h1>ダッシュボード</h1>
+<div class="tab-buttons">
+    {% for person in people %}
+    <div class="tab-button" id="button-{{ person.id }}" onclick="showTab({{ person.id }})">
+        {{ person.name }}
+    </div>
+    {% endfor %}
+</div>
+{% for person in people %}
+<div class="tab" id="tab-{{ person.id }}">
+    <h2>{{ person.name }}のタスク</h2>
+    {% if person.tasks %}
+    {% for task in person.tasks %}
+    {% set followup_class = task.follow_up_date|followup_style(today) %}
+    <div class="task {{ followup_class }}">
+        <!-- ステータス -->
+        <button id="status-button-{{ task.id }}" onclick="cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
+            {% if task.status == 'completed' %}完了
+            {% elif task.status == 'in_progress' %}進行中
+            {% else %}保留中{% endif %}
+        </button>
+        <!-- タスクID -->
+        <span class="task-id">ID: {{ task.id }}</span>
+        <!-- タイトル -->
+        <span class="task-title">{{ task.title }}</span>
+        <!-- フォロー日 -->
+        <span class="follow-up-date">フォロー日: {{ task.follow_up_date|format_date }}</span>
+        <!-- タスクへのリンク -->
+        <a href="#" class="task-link" onclick="loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">タスクを見る</a>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>タスクがありません。</p>
+    {% endif %}
+</div>
+{% endfor %}
+
+<!-- 必要なスタイルを追加 -->
+<style>
         /* タブのスタイル */
         .tab {
             display: none;
@@ -21,11 +55,6 @@
             cursor: pointer;
             border: 1px solid #ccc;
             margin-right: 5px;
-            background-color: #f9f9f9;
-            transition: background-color 0.3s;
-        }
-        .tab-button:hover {
-            background-color: #f1f1f1;
         }
         .tab-button.active {
             font-weight: bold;
@@ -51,7 +80,6 @@
             border: none;
             cursor: pointer;
             margin-right: 10px;
-            transition: background-color 0.3s;
         }
         .status-button.pending {
             background-color: orange;
@@ -64,7 +92,6 @@
         }
         .task-id {
             margin-right: 10px;
-            font-weight: bold;
         }
         .task-title {
             margin-right: 10px;
@@ -72,139 +99,62 @@
         }
         .follow-up-date {
             margin-right: 10px;
-            font-size: 0.9em;
-            color: #555;
         }
         .task-link {
             color: blue;
             text-decoration: underline;
             cursor: pointer;
         }
-        .task-link:hover {
-            color: darkblue;
-        }
-        /* レスポンシブデザイン */
-        @media (max-width: 600px) {
-            .tab-buttons {
-                flex-direction: column;
-            }
-            .tab-button {
-                margin-right: 0;
-                margin-bottom: 5px;
-            }
-            .task {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .status-button {
-                margin-bottom: 5px;
-            }
-        }
-    </style>
-    <script>
-        // タブを表示する関数
-        function showTab(personId) {
-            var tabs = document.getElementsByClassName('tab');
-            var buttons = document.getElementsByClassName('tab-button');
-            for (var i = 0; i < tabs.length; i++) {
-                tabs[i].classList.remove('active');
-                buttons[i].classList.remove('active');
-            }
-            document.getElementById('tab-' + personId).classList.add('active');
-            document.getElementById('button-' + personId).classList.add('active');
-        }
+</style>
 
-        // タスクのステータスを循環させる関数
-        function cycleStatus(taskId) {
-            fetch('/update_status/' + taskId, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    var button = document.getElementById('status-button-' + taskId);
-                    // ステータスのテキストとクラスを更新
-                    if (data.new_status === 'completed') {
-                        button.innerText = '完了';
-                    } else if (data.new_status === 'in_progress') {
-                        button.innerText = '進行中';
-                    } else {
-                        button.innerText = '保留中';
-                    }
-                    button.className = 'status-button ' + data.new_status;
-                } else {
-                    alert('ステータスの更新に失敗しました');
-                }
-            })
-            .catch(error => {
-                console.error('Error updating status:', error);
-                alert('ステータスの更新中にエラーが発生しました');
-            });
+<!-- 必要なスクリプトを追加 -->
+<script>
+    function showTab(personId) {
+        var tabs = document.getElementsByClassName('tab');
+        var buttons = document.getElementsByClassName('tab-button');
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].classList.remove('active');
+            buttons[i].classList.remove('active');
         }
+        document.getElementById('tab-' + personId).classList.add('active');
+        document.getElementById('button-' + personId).classList.add('active');
+    }
 
-        // コンテンツを読み込む関数
-        function loadContent(url, hash) {
-            if (typeof window.parent.loadContent === 'function') {
-                window.parent.loadContent(url, hash);
+    function cycleStatus(taskId) {
+        fetch('/update_status/' + taskId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status == 'success') {
+                var button = document.getElementById('status-button-' + taskId);
+                button.innerText = data.new_status === 'completed' ? '完了' :
+                                   data.new_status === 'in_progress' ? '進行中' : '保留中';
+                button.className = 'status-button ' + data.new_status;
             } else {
-                // 直接ページ遷移
-                window.location.href = url + (hash ? '#' + hash : '');
+                alert('ステータスの更新に失敗しました');
             }
-        }
-
-        // ページロード時に最初のタブを表示
-        document.addEventListener('DOMContentLoaded', function() {
-            {% if people %}
-            var firstPersonId = {{ people[0].id }};
-            showTab(firstPersonId);
-            {% endif %}
         });
-    </script>
-</head>
-<body>
-    <h1>ダッシュボード</h1>
-    <div class="tab-buttons">
-        {% for person in people %}
-        <div class="tab-button" id="button-{{ person.id }}" onclick="showTab({{ person.id }})">
-            {{ person.name }}
-        </div>
-        {% endfor %}
-    </div>
-    {% for person in people %}
-    <div class="tab" id="tab-{{ person.id }}">
-        <h2>{{ person.name }}のタスク</h2>
-        {% if person.tasks %}
-            {% for task in person.tasks %}
-                {% set followup_class = task.follow_up_date|followup_style(today) %}
-                <div class="task {{ followup_class }}">
-                    <!-- ステータスボタン -->
-                    <button id="status-button-{{ task.id }}" onclick="cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
-                        {% if task.status == 'completed' %}
-                            完了
-                        {% elif task.status == 'in_progress' %}
-                            進行中
-                        {% else %}
-                            保留中
-                        {% endif %}
-                    </button>
-                    <!-- タスクID -->
-                    <span class="task-id">ID: {{ task.id }}</span>
-                    <!-- タスクタイトル -->
-                    <span class="task-title">{{ task.title }}</span>
-                    <!-- フォロー日 -->
-                    <span class="follow-up-date">フォロー日: {{ task.follow_up_date|format_date }}</span>
-                    <!-- タスクへのリンク -->
-                    <a href="#" class="task-link" onclick="loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">タスクを見る</a>
-                </div>
-            {% endfor %}
-        {% else %}
-            <p>タスクがありません。</p>
+    }
+
+    function loadContent(url, hash) {
+        if (typeof window.parent.loadContent === 'function') {
+            window.parent.loadContent(url, hash);
+        } else {
+            // 直接ページ遷移
+            window.location.href = url + (hash ? '#' + hash : '');
+        }
+    }
+
+    // ページロード時に最初のタブを表示
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if people %}
+        var firstPersonId = {{ people[0].id }};
+        showTab(firstPersonId);
         {% endif %}
-    </div>
-    {% endfor %}
-</body>
-</html>
+    });
+</script>
