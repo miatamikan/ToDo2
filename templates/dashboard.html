@@ -3,7 +3,7 @@
 <h1>ダッシュボード</h1>
 <div class="tab-buttons">
     {% for person in people %}
-    <div class="tab-button" id="button-{{ person.id }}" onclick="window.showTab({{ person.id }})">
+    <div class="tab-button" id="button-{{ person.id }}" onclick="showTab({{ person.id }})">
         {{ person.name }}
     </div>
     {% endfor %}
@@ -17,7 +17,7 @@
     {% set followup_class = task.follow_up_date|followup_style(today) %}
     <div class="task {{ followup_class }}">
         <!-- ステータスボタンの表示 -->
-        <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
+        <button id="status-button-{{ task.id }}" onclick="cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
             {% if task.status == 'not_started' %}未着手
             {% elif task.status == 'pending' %}保留中
             {% elif task.status == 'in_progress' %}進行中
@@ -26,12 +26,18 @@
         </button>
 
         <!-- タイトルをリンクに変更 -->
-        <a href="#" class="task-title-link" onclick="window.loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">
+        <a href="#" class="task-title-link" onclick="loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">
             {{ task.title }}
         </a>
 
-        <!-- フォロー日 -->
-        <span class="follow-up-date">フォロー日: {{ task.follow_up_date|format_date }}</span>
+        <!-- フォロー日と編集アイコン -->
+        <span class="follow-up-date" id="follow-up-date-{{ task.id }}">フォロー日: {{ task.follow_up_date|format_date }}</span>
+        <button class="edit-follow-up-button" onclick="editFollowUpDate({{ task.id }})" title="フォロー日を編集">
+            ✏️
+        </button>
+
+        <!-- 編集用の日付入力フィールド（初期は非表示） -->
+        <input type="date" id="follow-up-input-{{ task.id }}" class="follow-up-input" style="display: none;" onchange="updateFollowUpDate({{ task.id }})">
     </div>
     {% endfor %}
     {% else %}
@@ -40,81 +46,259 @@
 </div>
 {% endfor %}
 
+<!-- フラットピッカーのJavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 <!-- 必要なスタイルを追加 -->
 <style>
-        /* タブのスタイル */
-        .tab {
-            display: none;
-        }
-        .tab.active {
-            display: block;
-        }
-        .tab-buttons {
-            display: flex;
-            margin-bottom: 10px;
-        }
-        .tab-button {
-            padding: 10px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            margin-right: 5px;
-        }
-        .tab-button.active {
-            font-weight: bold;
-            background-color: #eee;
-        }
-        /* タスクのスタイル */
-        .task {
-            padding: 10px;
-            border-bottom: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-        }
-        /* フォロー日の背景色と文字色 */
-        .task.today {
-            background-color: #FFCDD2; /* 薄い赤色 */
-            color: black;
-        }
-        .task.three_days_ago {
-            background-color: #FFEBEE; /* さらに薄い赤色 */
-            color: black;
-        }
-        /* ステータスボタンのスタイル */
-        .status-button {
-            width: 100px; /* 幅を固定して左端を揃える */
-            padding: 5px 10px;
-            border-radius: 3px;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-        .status-button.pending {
-            background-color: orange;
-        }
-        .status-button.in_progress {
-            background-color: blue;
-        }
-        .status-button.completed {
-            background-color: green;
-        }
-        .task-title-link {
-            margin-right: 10px;
-            flex-grow: 1;
-            text-decoration: none;
-            color: white; /* 白い文字 */
-        }
-        .task-title-link:hover {
-            text-decoration: underline;
-        }
-        .follow-up-date {
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-        /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
-        .task.today .task-title-link,
-        .task.three_days_ago .task-title-link {
-            color: black; /* 黒い文字 */
-        }
+    /* タブのスタイル */
+    .tab {
+        display: none;
+    }
+    .tab.active {
+        display: block;
+    }
+    .tab-buttons {
+        display: flex;
+        margin-bottom: 10px;
+    }
+    .tab-button {
+        padding: 10px;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        margin-right: 5px;
+    }
+    .tab-button.active {
+        font-weight: bold;
+        background-color: #eee;
+    }
+    /* タスクのスタイル */
+    .task {
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        display: flex;
+        align-items: center;
+    }
+    /* フォロー日の背景色と文字色 */
+    .task.today {
+        background-color: #FFCDD2; /* 薄い赤色 */
+        color: black;
+    }
+    .task.yesterday {
+        background-color: #FFEBEE; /* さらに薄い赤色 */
+        color: black;
+    }
+    /* ステータスボタンのスタイル */
+    .status-button {
+        width: 100px; /* 幅を固定して左端を揃える */
+        padding: 5px 10px;
+        border-radius: 3px;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+    .status-button.pending {
+        background-color: orange;
+    }
+    .status-button.in_progress {
+        background-color: blue;
+    }
+    .status-button.completed {
+        background-color: green;
+    }
+    .status-button.not_started {
+        background-color: gray;
+    }
+    .task-title-link {
+        margin-right: 10px;
+        flex-grow: 1;
+        text-decoration: none;
+        color: white; /* 白い文字 */
+    }
+    .task-title-link:hover {
+        text-decoration: underline;
+    }
+    .follow-up-date {
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+    /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
+    .task.today .task-title-link,
+    .task.yesterday .task-title-link {
+        color: black; /* 黒い文字 */
+    }
+    /* 編集アイコンのスタイル */
+    .edit-follow-up-button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        margin-left: 10px;
+    }
+    .edit-follow-up-button:hover {
+        color: #007BFF; /* ホバー時に色を変更 */
+    }
+    /* 日付入力フィールドのスタイル */
+    .follow-up-input {
+        padding: 5px;
+        font-size: 14px;
+        margin-left: 10px;
+    }
 </style>
+
+<script>
+    // タブ表示の初期化
+    document.addEventListener('DOMContentLoaded', function() {
+        // 最初のタブをアクティブにする
+        const firstTabButton = document.querySelector('.tab-button');
+        if (firstTabButton) {
+            firstTabButton.classList.add('active');
+            const firstTabId = firstTabButton.id.replace('button-', '');
+            document.getElementById('tab-' + firstTabId).classList.add('active');
+        }
+
+        // フラットピッカーの初期化
+        flatpickr("input[type=date]", {
+            dateFormat: "Y-m-d",
+            locale: "ja"
+        });
+    });
+
+    function showTab(personId) {
+        // 全てのタブとボタンから 'active' クラスを削除
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => tab.classList.remove('active'));
+
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(button => button.classList.remove('active'));
+
+        // 選択されたタブとボタンに 'active' クラスを追加
+        document.getElementById('tab-' + personId).classList.add('active');
+        document.getElementById('button-' + personId).classList.add('active');
+    }
+
+    function cycleStatus(taskId) {
+        fetch(`/update_status/${taskId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'  // AJAX判定用
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // ステータスボタンのテキストとクラスを更新
+                const statusButton = document.getElementById(`status-button-${taskId}`);
+                let statusText = '';
+                switch(data.new_status) {
+                    case 'not_started':
+                        statusText = '未着手';
+                        statusButton.className = 'status-button not_started';
+                        break;
+                    case 'pending':
+                        statusText = '保留中';
+                        statusButton.className = 'status-button pending';
+                        break;
+                    case 'in_progress':
+                        statusText = '進行中';
+                        statusButton.className = 'status-button in_progress';
+                        break;
+                    case 'completed':
+                        statusText = '完了';
+                        statusButton.className = 'status-button completed';
+                        break;
+                    default:
+                        statusText = '不明';
+                        statusButton.className = 'status-button';
+                }
+                statusButton.textContent = statusText;
+            } else {
+                alert(`エラー: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('ステータスの更新中にエラーが発生しました。');
+        });
+    }
+
+    function loadContent(url, targetId) {
+        fetch(url)
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById(targetId).innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading content:', error);
+        });
+    }
+
+    function editFollowUpDate(taskId) {
+        // 現在のフォロー日を取得
+        const currentDateText = document.getElementById(`follow-up-date-{{ task.id }}`).innerText;
+        const currentDateMatch = document.getElementById(`follow-up-date-${taskId}`).innerText.match(/(\d{4}年\d{2}月\d{2}日)/);
+        let currentDate = '';
+        if (currentDateMatch) {
+            // フォーマットを YYYY-MM-DD に変換
+            currentDate = currentDateMatch[1].replace('年', '-').replace('月', '-').replace('日', '');
+        }
+
+        // 日付入力フィールドを表示し、値を設定
+        const dateInput = document.getElementById(`follow-up-input-${taskId}`);
+        dateInput.style.display = 'inline-block';
+        dateInput.value = currentDate;
+
+        // フォロー日表示を隠す
+        document.getElementById(`follow-up-date-${taskId}`).style.display = 'none';
+
+        // フォーカスを設定
+        dateInput.focus();
+    }
+
+    function updateFollowUpDate(taskId) {
+        const dateInput = document.getElementById(`follow-up-input-${taskId}`);
+        const newDate = dateInput.value;
+
+        if (!newDate) {
+            alert('有効な日付を選択してください。');
+            return;
+        }
+
+        // AJAXリクエストでフォロー日を更新
+        fetch(`/update_follow_up_date/${taskId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'  // AJAX判定用
+            },
+            body: JSON.stringify({ follow_up_date: newDate })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // フォロー日を更新
+                const formattedDate = new Date(newDate).toLocaleDateString('ja-JP', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                document.getElementById(`follow-up-date-${taskId}`).innerText = `フォロー日: ${formattedDate}`;
+                document.getElementById(`follow-up-date-${taskId}`).style.display = 'inline';
+                dateInput.style.display = 'none';
+
+                // フォロー日のスタイルを更新（必要に応じて）
+                // ここではシンプルに再読み込みを行います
+                location.reload();
+            } else {
+                alert(`エラー: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('フォロー日の更新中にエラーが発生しました。');
+        });
+    }
+</script>
