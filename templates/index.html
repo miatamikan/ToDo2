@@ -279,32 +279,25 @@
     <script src="{{ url_for('static', filename='js/Sortable.min.js') }}"></script>
     <script>
         // コンテンツをロードする関数をグローバルに設定
-        // 既存のloadContent関数を修正
         window.loadContent = function(url, hash) {
-            let sortOption = document.getElementById('sort-option') ? document.getElementById('sort-option').value : 'priority';
-            let fullUrl = url;
-        
-            // ダッシュボードの場合はsortOptionを付けない
-            if (url !== '/dashboard') {
-                fullUrl += '?sort=' + sortOption;
-            }
-        
+            let sortOption = document.getElementById('sort-option').value;
+            let fullUrl = url + '?sort=' + sortOption;
             $.get(fullUrl, function(data) {
                 $("#main-content-area").html(data);
                 let newTitle = $("#task-title").text();
                 if (newTitle) {
                     document.title = newTitle;
                 }
-        
+
                 // スクロール位置をリセットする
                 $(".main-content").scrollTop(0);
-        
+
                 // 検索機能を再適用
                 window.applySearchFilter();
-        
+
                 // 現在表示中のURLをデータ属性に保存
                 $('#main-content-area').data('current-url', url);
-        
+
                 // ハッシュが指定されている場合はスクロール
                 if (hash) {
                     let targetElement = document.getElementById(hash);
@@ -312,7 +305,7 @@
                         targetElement.scrollIntoView({ behavior: 'smooth' });
                     }
                 }
-        
+
                 // タスクリストの初期化
                 window.initTaskList();
             });
