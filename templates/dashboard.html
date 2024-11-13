@@ -124,6 +124,14 @@
         margin-right: 10px;
         flex-shrink: 0;
     }
+    /* フォロー日が過去の場合のスタイル */
+    .task.past {
+        background-color: #FFCDD2; /* 薄い赤色 */
+        color: black;
+    }
+    .task.past .task-title-link {
+        color: black; /* 黒い文字 */
+    }
     /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
     .task.today .task-title-link,
     .task.yesterday .task-title-link {
