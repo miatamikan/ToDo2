@@ -1,5 +1,3 @@
-#app.py
-
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, send_file
 from flask_sqlalchemy import SQLAlchemy
 import os
@@ -12,7 +10,6 @@ from sqlalchemy import text, nulls_last
 from werkzeug.utils import secure_filename
 import re
 import unicodedata
-
 
 app = Flask(__name__)
 
@@ -527,15 +524,15 @@ def format_date(value):
     else:
         return '未設定'
 
-# フォロー日のスタイルを決定するフィルタを追加
+# フォロー日のスタイルを決定するフィルタを修正
 @app.template_filter('followup_style')
 def followup_style(follow_up_date, today):
     if follow_up_date:
         diff = (follow_up_date.date() - today).days
         if diff == 0:
             return 'today'  # 当日
-        elif diff == -1:
-            return 'yesterday'  # 前日
+        elif diff < 0:
+            return 'overdue'  # 過去の日付
     return ''
 
 # ファイルサイズをフォーマットするフィルタを追加
@@ -680,7 +677,6 @@ def dashboard():
     today = datetime.now(pytz.timezone('Asia/Tokyo')).date()
     return render_template('dashboard.html', people=people, today=today)
 
-
 # タスクのステータスを更新するエンドポイントを追加
 @app.route('/update_status/<int:task_id>', methods=['POST'])
 @login_required
@@ -698,6 +694,20 @@ def update_status(task_id):
     task.update_last_updated()
     db.session.commit()
     return jsonify({'status': 'success', 'new_status': task.status})
+
+# フォロー日を更新するエンドポイントを追加
+@app.route('/update_follow_up_date/<int:task_id>', methods=['POST'])
+@login_required
+def update_follow_up_date(task_id):
+    task = Task.query.get_or_404(task_id)
+    new_date_str = request.form.get('new_date')
+    if new_date_str:
+        task.follow_up_date = datetime.strptime(new_date_str, '%Y-%m-%d')
+    else:
+        task.follow_up_date = None
+    task.update_last_updated()
+    db.session.commit()
+    return jsonify({'status': 'success', 'new_date': task.follow_up_date.strftime('%Y-%m-%d') if task.follow_up_date else None})
 
 if __name__ == '__main__':
     app.run(debug=True)
