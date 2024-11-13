@@ -18,33 +18,29 @@
     {% set sorted_tasks = person.sorted_tasks_title %}
     {% if sorted_tasks %}
     {% for task in sorted_tasks %}
-    {% if selected_date %}
-        {% set task_date = task.follow_up_date.date() if task.follow_up_date else None %}
-        {% if task_date != selected_date %}
-            {% continue %}
+        {% if not selected_date or (task.follow_up_date and task.follow_up_date.date() == selected_date) %}
+            {% set followup_class = task.follow_up_date|followup_style(today) %}
+            <div class="task {{ followup_class }}" data-task-id="{{ task.id }}">
+                <!-- ステータスボタンの表示 -->
+                <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
+                    {% if task.status == 'not_started' %}未着手
+                    {% elif task.status == 'pending' %}保留中
+                    {% elif task.status == 'in_progress' %}進行中
+                    {% elif task.status == 'completed' %}完了
+                    {% else %}不明{% endif %}
+                </button>
+
+                <!-- タイトルをリンクに変更 -->
+                <a href="#" class="task-title-link" onclick="window.loadContent('/person_tasks/{{ task.person_id }}')">
+                    {{ task.title }}
+                </a>
+
+                <!-- フォロー日 -->
+                <span class="follow-up-date" data-task-id="{{ task.id }}" onclick="window.editFollowUpDate({{ task.id }})">
+                    フォロー日: <span id="follow-up-date-display-{{ task.id }}">{{ task.follow_up_date|format_date }}</span>
+                </span>
+            </div>
         {% endif %}
-    {% endif %}
-    {% set followup_class = task.follow_up_date|followup_style(today) %}
-    <div class="task {{ followup_class }}" data-task-id="{{ task.id }}">
-        <!-- ステータスボタンの表示 -->
-        <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
-            {% if task.status == 'not_started' %}未着手
-            {% elif task.status == 'pending' %}保留中
-            {% elif task.status == 'in_progress' %}進行中
-            {% elif task.status == 'completed' %}完了
-            {% else %}不明{% endif %}
-        </button>
-
-        <!-- タイトルをリンクに変更 -->
-        <a href="#" class="task-title-link" onclick="window.loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">
-            {{ task.title }}
-        </a>
-
-        <!-- フォロー日 -->
-        <span class="follow-up-date" data-task-id="{{ task.id }}" onclick="window.editFollowUpDate({{ task.id }})">
-            フォロー日: <span id="follow-up-date-display-{{ task.id }}">{{ task.follow_up_date|format_date }}</span>
-        </span>
-    </div>
     {% endfor %}
     {% else %}
     <p>タスクがありません。</p>
@@ -54,86 +50,86 @@
 
 <!-- 必要なスタイルを追加 -->
 <style>
-    /* タブのスタイル */
-    .tab {
-        display: none;
-    }
-    .tab.active {
-        display: block;
-    }
-    .tab-buttons {
-        display: flex;
-        margin-bottom: 10px;
-    }
-    .tab-button {
-        padding: 10px;
-        cursor: pointer;
-        border: 1px solid #ccc;
-        margin-right: 5px;
-    }
-    .tab-button.active {
-        font-weight: bold;
-        background-color: #eee;
-    }
-    /* タスクのスタイル */
-    .task {
-        padding: 10px;
-        border-bottom: 1px solid #ccc;
-        display: flex;
-        align-items: center;
-    }
-    /* フォロー日の背景色と文字色 */
-    .task.today {
-        background-color: #FFCDD2; /* 薄い赤色 */
-        color: black;
-    }
-    .task.overdue {
-        background-color: #FFC0CB; /* ピンク色 */
-        color: black;
-    }
-    /* ステータスボタンのスタイル */
-    .status-button {
-        width: 100px; /* 幅を固定して左端を揃える */
-        padding: 5px 10px;
-        border-radius: 3px;
-        color: #fff;
-        border: none;
-        cursor: pointer;
-        margin-right: 10px;
-        flex-shrink: 0;
-    }
-    .status-button.pending {
-        background-color: orange;
-    }
-    .status-button.in_progress {
-        background-color: blue;
-    }
-    .status-button.completed {
-        background-color: green;
-    }
-    .task-title-link {
-        margin-right: 10px;
-        flex-grow: 1;
-        text-decoration: none;
-        color: white; /* 白い文字 */
-    }
-    .task-title-link:hover {
-        text-decoration: underline;
-    }
-    .follow-up-date {
-        margin-right: 10px;
-        flex-shrink: 0;
-        cursor: pointer;
-    }
-    /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
-    .task.today .task-title-link,
-    .task.overdue .task-title-link {
-        color: black; /* 黒い文字 */
-    }
-    /* カレンダーのスタイル */
-    #calendar-container {
-        width: 300px;
-    }
+        /* タブのスタイル */
+        .tab {
+            display: none;
+        }
+        .tab.active {
+            display: block;
+        }
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .tab-button {
+            padding: 10px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            margin-right: 5px;
+        }
+        .tab-button.active {
+            font-weight: bold;
+            background-color: #eee;
+        }
+        /* タスクのスタイル */
+        .task {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+        }
+        /* フォロー日の背景色と文字色 */
+        .task.today {
+            background-color: #FFCDD2; /* 薄い赤色 */
+            color: black;
+        }
+        .task.overdue {
+            background-color: #FFC0CB; /* ピンク色 */
+            color: black;
+        }
+        /* ステータスボタンのスタイル */
+        .status-button {
+            width: 100px; /* 幅を固定して左端を揃える */
+            padding: 5px 10px;
+            border-radius: 3px;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .status-button.pending {
+            background-color: orange;
+        }
+        .status-button.in_progress {
+            background-color: blue;
+        }
+        .status-button.completed {
+            background-color: green;
+        }
+        .task-title-link {
+            margin-right: 10px;
+            flex-grow: 1;
+            text-decoration: none;
+            color: white; /* 白い文字 */
+        }
+        .task-title-link:hover {
+            text-decoration: underline;
+        }
+        .follow-up-date {
+            margin-right: 10px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
+        .task.today .task-title-link,
+        .task.overdue .task-title-link {
+            color: black; /* 黒い文字 */
+        }
+        /* カレンダーのスタイル */
+        #calendar-container {
+            width: 300px;
+        }
 </style>
 
 <!-- フルカレンダーのスクリプトとスタイルを追加 -->
@@ -189,7 +185,9 @@
                 }
 
                 // カレンダーを再描画
-                window.calendar.refetchEvents();
+                if (window.calendar) {
+                    window.calendar.refetchEvents();
+                }
             });
         });
     };
@@ -201,10 +199,9 @@
             initialView: 'dayGridMonth',
             locale: 'ja',
             events: '/get_calendar_events',
-            eventDisplay: 'background',
             selectable: true,
-            select: function(info) {
-                var selectedDate = info.startStr;
+            eventClick: function(info) {
+                var selectedDate = info.event.startStr;
                 var urlParams = new URLSearchParams(window.location.search);
                 urlParams.set('follow_up_date', selectedDate);
                 window.location.search = urlParams.toString();
@@ -212,4 +209,210 @@
         });
         window.calendar.render();
     });
+
+    // コンテンツをロードする関数をグローバルに設定
+    window.loadContent = function(url, hash) {
+        // sort-option要素が存在するか確認
+        let sortOptionElement = document.getElementById('sort-option');
+        let sortOption = sortOptionElement ? sortOptionElement.value : '';
+        let fullUrl = url;
+        if (sortOption) {
+            // URLにクエリパラメータを追加
+            fullUrl += url.includes('?') ? '&' : '?';
+            fullUrl += 'sort=' + sortOption;
+        }
+        $.get(fullUrl, function(data) {
+            $("#main-content-area").html(data);
+            let newTitle = $("#task-title").text();
+            if (newTitle) {
+                document.title = newTitle;
+            }
+
+            // スクロール位置をリセットする
+            $(".main-content").scrollTop(0);
+
+            // 検索機能を再適用
+            window.applySearchFilter();
+
+            // 現在表示中のURLをデータ属性に保存
+            $('#main-content-area').data('current-url', url);
+
+            // ハッシュが指定されている場合はスクロール
+            if (hash) {
+                let targetElement = document.getElementById(hash);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+
+            // タスクリストの初期化
+            window.initTaskList();
+        });
+    };
+
+    // タブの表示切り替え関数をグローバルに設定
+    window.showTab = function(personId) {
+        var tabs = document.getElementsByClassName('tab');
+        var buttons = document.getElementsByClassName('tab-button');
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].classList.remove('active');
+            buttons[i].classList.remove('active');
+        }
+        document.getElementById('tab-' + personId).classList.add('active');
+        document.getElementById('button-' + personId).classList.add('active');
+    };
+
+    // ステータスを更新する関数をグローバルに設定
+    window.cycleStatus = function(taskId) {
+        fetch('/update_status/' + taskId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status == 'success') {
+                var button = document.getElementById('status-button-' + taskId);
+                var newStatus = data.new_status;
+                button.innerText = newStatus === 'not_started' ? '未着手' :
+                                   newStatus === 'pending' ? '保留中' :
+                                   newStatus === 'in_progress' ? '進行中' :
+                                   newStatus === 'completed' ? '完了' : '不明';
+                button.className = 'status-button ' + newStatus;
+            } else {
+                alert('ステータスの更新に失敗しました');
+            }
+        });
+    };
+
+    // 検索機能をグローバルに設定
+    window.applySearchFilter = function() {
+        let filter = document.getElementById('task-search').value.trim().toLowerCase();
+        let keywords = filter.split(/\s+/);
+        let tasks = document.querySelectorAll('#task-list li');
+        tasks.forEach(task => {
+            let taskText = task.textContent.toLowerCase();
+            let match = keywords.every(keyword => taskText.includes(keyword));
+            task.style.display = match ? '' : 'none';
+        });
+    };
+
+    // サイドバーの担当者リストをソート可能に
+    var personList = document.getElementById('person-list');
+    if (personList) {
+        new Sortable(personList, {
+            animation: 150,
+            onEnd: function (evt) {
+                let people = Array.from(personList.children)
+                    .filter(li => li.dataset.personId)
+                    .map(li => li.dataset.personId);
+                fetch('/update_person_order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({person_order: people})
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to update person order');
+                    }
+                    return response.json();
+                })
+                .then(data => console.log(data))
+                .catch(error => alert('担当者の順序更新に失敗しました: ' + error.message));
+            }
+        });
+    }
+
+    // 並び替えオプションが変更されたときに再読み込み
+    document.getElementById('sort-option').addEventListener('change', function() {
+        let currentUrl = $('#main-content-area').data('current-url');
+        if (!currentUrl) {
+            currentUrl = '/all_tasks';
+        }
+        window.loadContent(currentUrl);
+    });
+
+    // タスクリストの初期化関数をグローバルに設定
+    window.initTaskList = function() {
+        // 折りたたみ機能
+        document.querySelectorAll('.task-item').forEach(function(taskItem) {
+            var contentDiv = taskItem.querySelector('.task-content');
+            var toggleButton = taskItem.querySelector('.btn-toggle-task');
+
+            if (contentDiv && contentDiv.scrollHeight > 400) {
+                toggleButton.style.display = 'block';
+
+                toggleButton.addEventListener('click', function() {
+                    if (contentDiv.style.maxHeight === '400px') {
+                        contentDiv.style.maxHeight = 'none';
+                        toggleButton.textContent = '折りたたむ';
+                    } else {
+                        contentDiv.style.maxHeight = '400px';
+                        toggleButton.textContent = 'もっと見る';
+                    }
+                });
+            }
+        });
+
+        // タスクの並び替え機能
+        var taskList = document.getElementById('task-list');
+        if (taskList) {
+            new Sortable(taskList, {
+                animation: 150,
+                onEnd: function (evt) {
+                    let tasks = Array.from(taskList.children).map(task => task.dataset.taskId);
+                    fetch('/update_task_order', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({task_order: tasks})
+                    }).then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to update task order');
+                        }
+                        return response.json();
+                    })
+                    .then(data => console.log(data))
+                    .catch(error => alert('タスクの順序更新に失敗しました: ' + error.message));
+                }
+            });
+        }
+    };
+
+    // URLコピー機能をグローバルに設定
+    window.copyToClipboard = function(url) {
+        navigator.clipboard.writeText(url).then(function() {
+            alert('URLがクリップボードにコピーされました');
+        }, function(err) {
+            alert('コピーに失敗しました: ' + err);
+        });
+    };
+
+    // ページ読み込み時に初期コンテンツをロード
+    $(document).ready(function() {
+        let params = new URLSearchParams(window.location.search);
+        let personId = params.get('person_id');
+        let sortOptionElement = document.getElementById('sort-option');
+        let sortOption = params.get('sort') || (sortOptionElement ? sortOptionElement.value : '');
+        if (sortOptionElement) {
+            sortOptionElement.value = sortOption;
+        }
+        let initialUrl;
+        if (personId) {
+            initialUrl = '/person_tasks/' + personId;
+        } else {
+            initialUrl = '/all_tasks';
+        }
+
+        // ハッシュを取得
+        let hash = window.location.hash.substring(1);
+        window.loadContent(initialUrl, hash);
+    });
+
+    // 検索窓のイベントリスナーをグローバルに設定
+    document.getElementById('task-search').addEventListener('input', window.applySearchFilter);
 </script>
