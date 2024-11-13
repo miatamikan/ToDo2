@@ -18,15 +18,12 @@ app = Flask(__name__)
 
 # ログインが必要なデコレータを作成
 def login_required(func):
-    from functools import wraps
-
     @wraps(func)
     def wrapper(*args, **kwargs):
         if not session.get('logged_in'):
             flash('ログインが必要です')
             return redirect(url_for('login'))
         return func(*args, **kwargs)
-
     return wrapper
 
 # データベースファイルをダウンロードするためのエンドポイント
