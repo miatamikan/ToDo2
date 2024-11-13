@@ -1,16 +1,10 @@
 <h1>ダッシュボード</h1>
-<div style="display: flex; justify-content: space-between;">
-    <div class="tab-buttons">
-        {% for person in people %}
-        <div class="tab-button" id="button-{{ person.id }}" onclick="window.showTab({{ person.id }})">
-            {{ person.name }}
-        </div>
-        {% endfor %}
+<div class="tab-buttons">
+    {% for person in people %}
+    <div class="tab-button" id="button-{{ person.id }}" onclick="window.showTab({{ person.id }})">
+        {{ person.name }}
     </div>
-    <!-- カレンダーを配置 -->
-    <div id="calendar-container">
-        <div id="calendar"></div>
-    </div>
+    {% endfor %}
 </div>
 {% for person in people %}
 <div class="tab" id="tab-{{ person.id }}">
@@ -18,29 +12,27 @@
     {% set sorted_tasks = person.sorted_tasks_title %}
     {% if sorted_tasks %}
     {% for task in sorted_tasks %}
-        {% if not selected_date or (task.follow_up_date and task.follow_up_date.date() == selected_date) %}
-            {% set followup_class = task.follow_up_date|followup_style(today) %}
-            <div class="task {{ followup_class }}" data-task-id="{{ task.id }}">
-                <!-- ステータスボタンの表示 -->
-                <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
-                    {% if task.status == 'not_started' %}未着手
-                    {% elif task.status == 'pending' %}保留中
-                    {% elif task.status == 'in_progress' %}進行中
-                    {% elif task.status == 'completed' %}完了
-                    {% else %}不明{% endif %}
-                </button>
+    {% set followup_class = task.follow_up_date|followup_style(today) %}
+    <div class="task {{ followup_class }}">
+        <!-- ステータスボタンの表示 -->
+        <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
+            {% if task.status == 'not_started' %}未着手
+            {% elif task.status == 'pending' %}保留中
+            {% elif task.status == 'in_progress' %}進行中
+            {% elif task.status == 'completed' %}完了
+            {% else %}不明{% endif %}
+        </button>
 
-                <!-- タイトルをリンクに変更 -->
-                <a href="#" class="task-title-link" onclick="window.loadContent('/person_tasks/{{ task.person_id }}')">
-                    {{ task.title }}
-                </a>
+        <!-- タイトルをリンクに変更 -->
+        <a href="#" class="task-title-link" onclick="window.loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">
+            {{ task.title }}
+        </a>
 
-                <!-- フォロー日 -->
-                <span class="follow-up-date" data-task-id="{{ task.id }}" onclick="window.editFollowUpDate({{ task.id }})">
-                    フォロー日: <span id="follow-up-date-display-{{ task.id }}">{{ task.follow_up_date|format_date }}</span>
-                </span>
-            </div>
-        {% endif %}
+        <!-- フォロー日 -->
+        <span class="follow-up-date" data-task-id="{{ task.id }}" onclick="window.editFollowUpDate({{ task.id }})">
+            フォロー日: <span id="follow-up-date-display-{{ task.id }}">{{ task.follow_up_date|format_date }}</span>
+        </span>
+    </div>
     {% endfor %}
     {% else %}
     <p>タスクがありません。</p>
@@ -126,15 +118,7 @@
         .task.overdue .task-title-link {
             color: black; /* 黒い文字 */
         }
-        /* カレンダーのスタイル */
-        #calendar-container {
-            width: 300px;
-        }
 </style>
-
-<!-- フルカレンダーのスクリプトとスタイルを追加 -->
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
 
 <!-- JavaScriptを追加 -->
 <script>
@@ -169,7 +153,11 @@
             .then(response => response.json())
             .then(data => {
                 // 新しい日付を表示
-                var newDateText = data.new_date || '未設定';
+                var newDateText = '未設定';
+                if (data.new_date) {
+                    var dateObj = new Date(data.new_date);
+                    newDateText = dateObj.getFullYear() + '年' + String(dateObj.getMonth() + 1).padStart(2, '0') + '月' + String(dateObj.getDate()).padStart(2, '0') + '日';
+                }
                 var newSpan = document.createElement('span');
                 newSpan.id = 'follow-up-date-display-' + taskId;
                 newSpan.textContent = newDateText;
@@ -179,240 +167,16 @@
                 var taskDiv = document.querySelector('.task[data-task-id="' + taskId + '"]');
                 if (taskDiv) {
                     taskDiv.classList.remove('today', 'overdue');
-                    if (data.followup_class) {
-                        taskDiv.classList.add(data.followup_class);
+                    var today = new Date();
+                    var selectedDate = new Date(data.new_date);
+                    var diff = (selectedDate - today) / (1000 * 60 * 60 * 24);
+                    if (diff < 0) {
+                        taskDiv.classList.add('overdue');
+                    } else if (diff === 0) {
+                        taskDiv.classList.add('today');
                     }
-                }
-
-                // カレンダーを再描画
-                if (window.calendar) {
-                    window.calendar.refetchEvents();
                 }
             });
         });
     };
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // カレンダーの初期化
-        var calendarEl = document.getElementById('calendar');
-        window.calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'ja',
-            events: '/get_calendar_events',
-            selectable: true,
-            eventClick: function(info) {
-                var selectedDate = info.event.startStr;
-                var urlParams = new URLSearchParams(window.location.search);
-                urlParams.set('follow_up_date', selectedDate);
-                window.location.search = urlParams.toString();
-            }
-        });
-        window.calendar.render();
-    });
-
-    // コンテンツをロードする関数をグローバルに設定
-    window.loadContent = function(url, hash) {
-        // sort-option要素が存在するか確認
-        let sortOptionElement = document.getElementById('sort-option');
-        let sortOption = sortOptionElement ? sortOptionElement.value : '';
-        let fullUrl = url;
-        if (sortOption) {
-            // URLにクエリパラメータを追加
-            fullUrl += url.includes('?') ? '&' : '?';
-            fullUrl += 'sort=' + sortOption;
-        }
-        $.get(fullUrl, function(data) {
-            $("#main-content-area").html(data);
-            let newTitle = $("#task-title").text();
-            if (newTitle) {
-                document.title = newTitle;
-            }
-
-            // スクロール位置をリセットする
-            $(".main-content").scrollTop(0);
-
-            // 検索機能を再適用
-            window.applySearchFilter();
-
-            // 現在表示中のURLをデータ属性に保存
-            $('#main-content-area').data('current-url', url);
-
-            // ハッシュが指定されている場合はスクロール
-            if (hash) {
-                let targetElement = document.getElementById(hash);
-                if (targetElement) {
-                    targetElement.scrollIntoView({ behavior: 'smooth' });
-                }
-            }
-
-            // タスクリストの初期化
-            window.initTaskList();
-        });
-    };
-
-    // タブの表示切り替え関数をグローバルに設定
-    window.showTab = function(personId) {
-        var tabs = document.getElementsByClassName('tab');
-        var buttons = document.getElementsByClassName('tab-button');
-        for (var i = 0; i < tabs.length; i++) {
-            tabs[i].classList.remove('active');
-            buttons[i].classList.remove('active');
-        }
-        document.getElementById('tab-' + personId).classList.add('active');
-        document.getElementById('button-' + personId).classList.add('active');
-    };
-
-    // ステータスを更新する関数をグローバルに設定
-    window.cycleStatus = function(taskId) {
-        fetch('/update_status/' + taskId, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status == 'success') {
-                var button = document.getElementById('status-button-' + taskId);
-                var newStatus = data.new_status;
-                button.innerText = newStatus === 'not_started' ? '未着手' :
-                                   newStatus === 'pending' ? '保留中' :
-                                   newStatus === 'in_progress' ? '進行中' :
-                                   newStatus === 'completed' ? '完了' : '不明';
-                button.className = 'status-button ' + newStatus;
-            } else {
-                alert('ステータスの更新に失敗しました');
-            }
-        });
-    };
-
-    // 検索機能をグローバルに設定
-    window.applySearchFilter = function() {
-        let filter = document.getElementById('task-search').value.trim().toLowerCase();
-        let keywords = filter.split(/\s+/);
-        let tasks = document.querySelectorAll('#task-list li');
-        tasks.forEach(task => {
-            let taskText = task.textContent.toLowerCase();
-            let match = keywords.every(keyword => taskText.includes(keyword));
-            task.style.display = match ? '' : 'none';
-        });
-    };
-
-    // サイドバーの担当者リストをソート可能に
-    var personList = document.getElementById('person-list');
-    if (personList) {
-        new Sortable(personList, {
-            animation: 150,
-            onEnd: function (evt) {
-                let people = Array.from(personList.children)
-                    .filter(li => li.dataset.personId)
-                    .map(li => li.dataset.personId);
-                fetch('/update_person_order', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({person_order: people})
-                }).then(response => {
-                    if (!response.ok) {
-                        throw new Error('Failed to update person order');
-                    }
-                    return response.json();
-                })
-                .then(data => console.log(data))
-                .catch(error => alert('担当者の順序更新に失敗しました: ' + error.message));
-            }
-        });
-    }
-
-    // 並び替えオプションが変更されたときに再読み込み
-    document.getElementById('sort-option').addEventListener('change', function() {
-        let currentUrl = $('#main-content-area').data('current-url');
-        if (!currentUrl) {
-            currentUrl = '/all_tasks';
-        }
-        window.loadContent(currentUrl);
-    });
-
-    // タスクリストの初期化関数をグローバルに設定
-    window.initTaskList = function() {
-        // 折りたたみ機能
-        document.querySelectorAll('.task-item').forEach(function(taskItem) {
-            var contentDiv = taskItem.querySelector('.task-content');
-            var toggleButton = taskItem.querySelector('.btn-toggle-task');
-
-            if (contentDiv && contentDiv.scrollHeight > 400) {
-                toggleButton.style.display = 'block';
-
-                toggleButton.addEventListener('click', function() {
-                    if (contentDiv.style.maxHeight === '400px') {
-                        contentDiv.style.maxHeight = 'none';
-                        toggleButton.textContent = '折りたたむ';
-                    } else {
-                        contentDiv.style.maxHeight = '400px';
-                        toggleButton.textContent = 'もっと見る';
-                    }
-                });
-            }
-        });
-
-        // タスクの並び替え機能
-        var taskList = document.getElementById('task-list');
-        if (taskList) {
-            new Sortable(taskList, {
-                animation: 150,
-                onEnd: function (evt) {
-                    let tasks = Array.from(taskList.children).map(task => task.dataset.taskId);
-                    fetch('/update_task_order', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({task_order: tasks})
-                    }).then(response => {
-                        if (!response.ok) {
-                            throw new Error('Failed to update task order');
-                        }
-                        return response.json();
-                    })
-                    .then(data => console.log(data))
-                    .catch(error => alert('タスクの順序更新に失敗しました: ' + error.message));
-                }
-            });
-        }
-    };
-
-    // URLコピー機能をグローバルに設定
-    window.copyToClipboard = function(url) {
-        navigator.clipboard.writeText(url).then(function() {
-            alert('URLがクリップボードにコピーされました');
-        }, function(err) {
-            alert('コピーに失敗しました: ' + err);
-        });
-    };
-
-    // ページ読み込み時に初期コンテンツをロード
-    $(document).ready(function() {
-        let params = new URLSearchParams(window.location.search);
-        let personId = params.get('person_id');
-        let sortOptionElement = document.getElementById('sort-option');
-        let sortOption = params.get('sort') || (sortOptionElement ? sortOptionElement.value : '');
-        if (sortOptionElement) {
-            sortOptionElement.value = sortOption;
-        }
-        let initialUrl;
-        if (personId) {
-            initialUrl = '/person_tasks/' + personId;
-        } else {
-            initialUrl = '/all_tasks';
-        }
-
-        // ハッシュを取得
-        let hash = window.location.hash.substring(1);
-        window.loadContent(initialUrl, hash);
-    });
-
-    // 検索窓のイベントリスナーをグローバルに設定
-    document.getElementById('task-search').addEventListener('input', window.applySearchFilter);
 </script>
