@@ -524,15 +524,15 @@ def format_date(value):
     else:
         return '未設定'
 
-# フォロー日のスタイルを決定するフィルタを追加
+# フォロー日のスタイルを決定するフィルタを修正
 @app.template_filter('followup_style')
 def followup_style(follow_up_date, today):
     if follow_up_date:
         diff = (follow_up_date.date() - today).days
         if diff == 0:
             return 'today'  # 当日
-        elif diff == -1:
-            return 'yesterday'  # 前日
+        elif diff < 0:
+            return 'past'  # 過去
     return ''
 
 # ファイルサイズをフォーマットするフィルタを追加
