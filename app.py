@@ -303,17 +303,12 @@ def all_tasks():
 def person_tasks(person_id):
     person = Person.query.get_or_404(person_id)
     sort_option = request.args.get('sort', 'priority')
-    follow_up_date = request.args.get('follow_up_date')
-    query = Task.query.filter_by(person_id=person_id)
-    if follow_up_date:
-        date_obj = datetime.strptime(follow_up_date, '%Y-%m-%d').date()
-        query = query.filter(db.func.date(Task.follow_up_date) == date_obj)
     if sort_option == 'follow_up_date':
-        tasks = query.order_by(
+        tasks = Task.query.filter_by(person_id=person_id).order_by(
             db.case([(Task.follow_up_date != None, Task.follow_up_date)], else_=db.null())
         ).all()
     else:
-        tasks = query.order_by(Task.priority).all()
+        tasks = Task.query.filter_by(person_id=person_id).order_by(Task.priority).all()
     return render_template('task_list.html', tasks=tasks, person_name=person.name, person_id=person.id, sort_option=sort_option)
 
 # タスクの順序更新
@@ -680,12 +675,7 @@ def robots_txt():
 def dashboard():
     people = Person.query.order_by(Person.order).all()
     today = datetime.now(pytz.timezone('Asia/Tokyo')).date()
-    selected_date = request.args.get('follow_up_date')
-    if selected_date:
-        selected_date_obj = datetime.strptime(selected_date, '%Y-%m-%d').date()
-    else:
-        selected_date_obj = None
-    return render_template('dashboard.html', people=people, today=today, selected_date=selected_date_obj)
+    return render_template('dashboard.html', people=people, today=today)
 
 # タスクのステータスを更新するエンドポイントを追加
 @app.route('/update_status/<int:task_id>', methods=['POST'])
@@ -717,23 +707,7 @@ def update_follow_up_date(task_id):
         task.follow_up_date = None
     task.update_last_updated()
     db.session.commit()
-    # 新しい背景スタイルを計算
-    today = datetime.now(pytz.timezone('Asia/Tokyo')).date()
-    followup_class = followup_style(task.follow_up_date, today)
-    formatted_date = format_date(task.follow_up_date)
-    return jsonify({'status': 'success', 'new_date': formatted_date, 'followup_class': followup_class})
-
-# カレンダー用のデータを提供するエンドポイントを追加
-@app.route('/get_calendar_events')
-@login_required
-def get_calendar_events():
-    tasks = Task.query.filter(Task.follow_up_date != None).all()
-    events = []
-    for task in tasks:
-        jst_date = convert_to_jst(task.follow_up_date)
-        date_str = jst_date.strftime('%Y-%m-%d')
-        events.append(date_str)
-    return jsonify({'events': events})
+    return jsonify({'status': 'success', 'new_date': task.follow_up_date.strftime('%Y-%m-%d') if task.follow_up_date else None})
 
 if __name__ == '__main__':
     app.run(debug=True)
