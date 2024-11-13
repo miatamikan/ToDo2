@@ -1,4 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, send_file
+# app.py
+
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, send_file, abort
 from flask_sqlalchemy import SQLAlchemy
 import os
 import configparser
@@ -10,7 +12,7 @@ from sqlalchemy import text, nulls_last
 from werkzeug.utils import secure_filename
 import re
 import unicodedata
-
+from functools import wraps
 
 app = Flask(__name__)
 
@@ -678,7 +680,6 @@ def dashboard():
     today = datetime.now(pytz.timezone('Asia/Tokyo')).date()
     return render_template('dashboard.html', people=people, today=today)
 
-
 # タスクのステータスを更新するエンドポイントを追加
 @app.route('/update_status/<int:task_id>', methods=['POST'])
 @login_required
@@ -696,6 +697,40 @@ def update_status(task_id):
     task.update_last_updated()
     db.session.commit()
     return jsonify({'status': 'success', 'new_status': task.status})
+
+# フォロー日を更新するエンドポイントを追加
+@app.route('/update_follow_up_date/<int:task_id>', methods=['POST'])
+@login_required
+def update_follow_up_date(task_id):
+    data = request.get_json()
+    if not data or 'follow_up_date' not in data:
+        return jsonify({'status': 'failed', 'message': 'データが不完全です'}), 400
+
+    new_date_str = data['follow_up_date']
+    try:
+        # 日付文字列をdatetimeオブジェクトに変換
+        new_date = datetime.strptime(new_date_str, '%Y-%m-%d')
+        # 日本標準時に設定
+        jst = pytz.timezone('Asia/Tokyo')
+        new_date = jst.localize(new_date)
+    except ValueError:
+        return jsonify({'status': 'failed', 'message': '無効な日付形式です'}), 400
+
+    # タスクを取得
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({'status': 'failed', 'message': 'タスクが見つかりません'}), 404
+
+    # フォロー日を更新
+    task.follow_up_date = new_date
+    task.update_last_updated()
+
+    try:
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'フォロー日が更新されました'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'failed', 'message': 'データベースエラー: ' + str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
