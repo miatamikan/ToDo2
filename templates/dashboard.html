@@ -1,10 +1,16 @@
 <h1>ダッシュボード</h1>
-<div class="tab-buttons">
-    {% for person in people %}
-    <div class="tab-button" id="button-{{ person.id }}" onclick="window.showTab({{ person.id }})">
-        {{ person.name }}
+<div style="display: flex; justify-content: space-between;">
+    <div class="tab-buttons">
+        {% for person in people %}
+        <div class="tab-button" id="button-{{ person.id }}" onclick="window.showTab({{ person.id }})">
+            {{ person.name }}
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
+    <!-- カレンダーを配置 -->
+    <div id="calendar-container">
+        <div id="calendar"></div>
+    </div>
 </div>
 {% for person in people %}
 <div class="tab" id="tab-{{ person.id }}">
@@ -12,8 +18,14 @@
     {% set sorted_tasks = person.sorted_tasks_title %}
     {% if sorted_tasks %}
     {% for task in sorted_tasks %}
+    {% if selected_date %}
+        {% set task_date = task.follow_up_date.date() if task.follow_up_date else None %}
+        {% if task_date != selected_date %}
+            {% continue %}
+        {% endif %}
+    {% endif %}
     {% set followup_class = task.follow_up_date|followup_style(today) %}
-    <div class="task {{ followup_class }}">
+    <div class="task {{ followup_class }}" data-task-id="{{ task.id }}">
         <!-- ステータスボタンの表示 -->
         <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
             {% if task.status == 'not_started' %}未着手
@@ -42,83 +54,91 @@
 
 <!-- 必要なスタイルを追加 -->
 <style>
-        /* タブのスタイル */
-        .tab {
-            display: none;
-        }
-        .tab.active {
-            display: block;
-        }
-        .tab-buttons {
-            display: flex;
-            margin-bottom: 10px;
-        }
-        .tab-button {
-            padding: 10px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            margin-right: 5px;
-        }
-        .tab-button.active {
-            font-weight: bold;
-            background-color: #eee;
-        }
-        /* タスクのスタイル */
-        .task {
-            padding: 10px;
-            border-bottom: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-        }
-        /* フォロー日の背景色と文字色 */
-        .task.today {
-            background-color: #FFCDD2; /* 薄い赤色 */
-            color: black;
-        }
-        .task.overdue {
-            background-color: #FFC0CB; /* ピンク色 */
-            color: black;
-        }
-        /* ステータスボタンのスタイル */
-        .status-button {
-            width: 100px; /* 幅を固定して左端を揃える */
-            padding: 5px 10px;
-            border-radius: 3px;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-        .status-button.pending {
-            background-color: orange;
-        }
-        .status-button.in_progress {
-            background-color: blue;
-        }
-        .status-button.completed {
-            background-color: green;
-        }
-        .task-title-link {
-            margin-right: 10px;
-            flex-grow: 1;
-            text-decoration: none;
-            color: white; /* 白い文字 */
-        }
-        .task-title-link:hover {
-            text-decoration: underline;
-        }
-        .follow-up-date {
-            margin-right: 10px;
-            flex-shrink: 0;
-            cursor: pointer;
-        }
-        /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
-        .task.today .task-title-link,
-        .task.overdue .task-title-link {
-            color: black; /* 黒い文字 */
-        }
+    /* タブのスタイル */
+    .tab {
+        display: none;
+    }
+    .tab.active {
+        display: block;
+    }
+    .tab-buttons {
+        display: flex;
+        margin-bottom: 10px;
+    }
+    .tab-button {
+        padding: 10px;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        margin-right: 5px;
+    }
+    .tab-button.active {
+        font-weight: bold;
+        background-color: #eee;
+    }
+    /* タスクのスタイル */
+    .task {
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        display: flex;
+        align-items: center;
+    }
+    /* フォロー日の背景色と文字色 */
+    .task.today {
+        background-color: #FFCDD2; /* 薄い赤色 */
+        color: black;
+    }
+    .task.overdue {
+        background-color: #FFC0CB; /* ピンク色 */
+        color: black;
+    }
+    /* ステータスボタンのスタイル */
+    .status-button {
+        width: 100px; /* 幅を固定して左端を揃える */
+        padding: 5px 10px;
+        border-radius: 3px;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+    .status-button.pending {
+        background-color: orange;
+    }
+    .status-button.in_progress {
+        background-color: blue;
+    }
+    .status-button.completed {
+        background-color: green;
+    }
+    .task-title-link {
+        margin-right: 10px;
+        flex-grow: 1;
+        text-decoration: none;
+        color: white; /* 白い文字 */
+    }
+    .task-title-link:hover {
+        text-decoration: underline;
+    }
+    .follow-up-date {
+        margin-right: 10px;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+    /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
+    .task.today .task-title-link,
+    .task.overdue .task-title-link {
+        color: black; /* 黒い文字 */
+    }
+    /* カレンダーのスタイル */
+    #calendar-container {
+        width: 300px;
+    }
 </style>
+
+<!-- フルカレンダーのスクリプトとスタイルを追加 -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
 
 <!-- JavaScriptを追加 -->
 <script>
@@ -153,11 +173,7 @@
             .then(response => response.json())
             .then(data => {
                 // 新しい日付を表示
-                var newDateText = '未設定';
-                if (data.new_date) {
-                    var dateObj = new Date(data.new_date);
-                    newDateText = dateObj.getFullYear() + '年' + String(dateObj.getMonth() + 1).padStart(2, '0') + '月' + String(dateObj.getDate()).padStart(2, '0') + '日';
-                }
+                var newDateText = data.new_date || '未設定';
                 var newSpan = document.createElement('span');
                 newSpan.id = 'follow-up-date-display-' + taskId;
                 newSpan.textContent = newDateText;
@@ -167,16 +183,33 @@
                 var taskDiv = document.querySelector('.task[data-task-id="' + taskId + '"]');
                 if (taskDiv) {
                     taskDiv.classList.remove('today', 'overdue');
-                    var today = new Date();
-                    var selectedDate = new Date(data.new_date);
-                    var diff = (selectedDate - today) / (1000 * 60 * 60 * 24);
-                    if (diff < 0) {
-                        taskDiv.classList.add('overdue');
-                    } else if (diff === 0) {
-                        taskDiv.classList.add('today');
+                    if (data.followup_class) {
+                        taskDiv.classList.add(data.followup_class);
                     }
                 }
+
+                // カレンダーを再描画
+                window.calendar.refetchEvents();
             });
         });
     };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // カレンダーの初期化
+        var calendarEl = document.getElementById('calendar');
+        window.calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'ja',
+            events: '/get_calendar_events',
+            eventDisplay: 'background',
+            selectable: true,
+            select: function(info) {
+                var selectedDate = info.startStr;
+                var urlParams = new URLSearchParams(window.location.search);
+                urlParams.set('follow_up_date', selectedDate);
+                window.location.search = urlParams.toString();
+            }
+        });
+        window.calendar.render();
+    });
 </script>
