@@ -1,5 +1,3 @@
-<!-- templates/dashboard.html -->
-
 <h1>ダッシュボード</h1>
 <div class="tab-buttons">
     {% for person in people %}
@@ -31,7 +29,9 @@
         </a>
 
         <!-- フォロー日 -->
-        <span class="follow-up-date">フォロー日: {{ task.follow_up_date|format_date }}</span>
+        <span class="follow-up-date" data-task-id="{{ task.id }}" onclick="window.editFollowUpDate({{ task.id }})">
+            フォロー日: <span id="follow-up-date-display-{{ task.id }}">{{ task.follow_up_date|format_date }}</span>
+        </span>
     </div>
     {% endfor %}
     {% else %}
@@ -75,8 +75,8 @@
             background-color: #FFCDD2; /* 薄い赤色 */
             color: black;
         }
-        .task.three_days_ago {
-            background-color: #FFEBEE; /* さらに薄い赤色 */
+        .task.overdue {
+            background-color: #FFC0CB; /* ピンク色 */
             color: black;
         }
         /* ステータスボタンのスタイル */
@@ -111,10 +111,72 @@
         .follow-up-date {
             margin-right: 10px;
             flex-shrink: 0;
+            cursor: pointer;
         }
         /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
         .task.today .task-title-link,
-        .task.three_days_ago .task-title-link {
+        .task.overdue .task-title-link {
             color: black; /* 黒い文字 */
         }
 </style>
+
+<!-- JavaScriptを追加 -->
+<script>
+    window.editFollowUpDate = function(taskId) {
+        var dateSpan = document.getElementById('follow-up-date-display-' + taskId);
+        var currentDate = dateSpan.textContent.trim();
+        var newInput = document.createElement('input');
+        newInput.type = 'date';
+        // 現在の日付を取得してセット
+        var dateValue = '';
+        if (currentDate !== '未設定') {
+            // 'YYYY年MM月DD日' を 'YYYY-MM-DD' に変換
+            var match = currentDate.match(/(\d{4})年(\d{2})月(\d{2})日/);
+            if (match) {
+                dateValue = match[1] + '-' + match[2] + '-' + match[3];
+            }
+        }
+        newInput.value = dateValue;
+        dateSpan.parentNode.replaceChild(newInput, dateSpan);
+
+        newInput.focus();
+
+        newInput.addEventListener('blur', function() {
+            var newDate = newInput.value;
+            var formData = new FormData();
+            formData.append('new_date', newDate);
+            fetch('/update_follow_up_date/' + taskId, {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 新しい日付を表示
+                var newDateText = '未設定';
+                if (data.new_date) {
+                    var dateObj = new Date(data.new_date);
+                    newDateText = dateObj.getFullYear() + '年' + String(dateObj.getMonth() + 1).padStart(2, '0') + '月' + String(dateObj.getDate()).padStart(2, '0') + '日';
+                }
+                var newSpan = document.createElement('span');
+                newSpan.id = 'follow-up-date-display-' + taskId;
+                newSpan.textContent = newDateText;
+                newInput.parentNode.replaceChild(newSpan, newInput);
+
+                // タスクの背景色を更新
+                var taskDiv = document.querySelector('.task[data-task-id="' + taskId + '"]');
+                if (taskDiv) {
+                    taskDiv.classList.remove('today', 'overdue');
+                    var today = new Date();
+                    var selectedDate = new Date(data.new_date);
+                    var diff = (selectedDate - today) / (1000 * 60 * 60 * 24);
+                    if (diff < 0) {
+                        taskDiv.classList.add('overdue');
+                    } else if (diff === 0) {
+                        taskDiv.classList.add('today');
+                    }
+                }
+            });
+        });
+    };
+</script>
