@@ -1,348 +1,127 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>ダッシュボード</title>
-    <!-- Font Awesomeの読み込み -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
-    
-    <!-- カスタムスタイル -->
-    <style>
-        /* タブのスタイル */
-        .tab {
-            display: none;
-        }
-        .tab.active {
-            display: block;
-        }
-        .tab-buttons {
-            display: flex;
-            margin-bottom: 10px;
-        }
-        .tab-button {
-            padding: 10px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            margin-right: 5px;
-        }
-        .tab-button.active {
-            font-weight: bold;
-            background-color: #eee;
-        }
-        /* タスクのスタイル */
-        .task {
-            padding: 10px;
-            border-bottom: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-        }
-        /* フォロー日の背景色と文字色 */
-        .task.today {
-            background-color: #FFCDD2; /* 薄い赤色 */
-            color: black;
-        }
-        .task.overdue {
-            background-color: #FFC0CB; /* ピンク色 */
-            color: black;
-        }
-        /* ステータスボタンのスタイル */
-        .status-button {
-            width: 100px; /* 幅を固定して左端を揃える */
-            padding: 5px 10px;
-            border-radius: 3px;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-        .status-button.pending {
-            background-color: orange;
-        }
-        .status-button.in_progress {
-            background-color: blue;
-        }
-        .status-button.completed {
-            background-color: green;
-        }
-        .task-title-link {
-            margin-right: 10px;
-            flex-grow: 1;
-            text-decoration: none;
-            color: white; /* 白い文字 */
-        }
-        .task-title-link:hover {
-            text-decoration: underline;
-        }
-        .follow-up-date {
-            margin-right: 10px;
-            flex-shrink: 0;
-            cursor: pointer;
-        }
-        /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
-        .task.today .task-title-link,
-        .task.overdue .task-title-link {
-            color: black; /* 黒い文字 */
-        }
-        
-        /* タスク一覧のスタイル */
-        .thumbnail {
-            height: 100px;
-            object-fit: cover;
-        }
-        .card-img-top i {
-            font-size: 3rem;
-        }
-        .text-danger {
-            color: #dc3545 !important;
-        }
-        .text-primary {
-            color: #007bff !important;
-        }
-        .text-success {
-            color: #28a745 !important;
-        }
-        .text-warning {
-            color: #ffc107 !important;
-        }
-        .text-info {
-            color: #17a2b8 !important;
-        }
-        .text-muted {
-            color: #6c757d !important;
-        }
-        .card-text {
-            font-size: 0.9em;
-            color: #000;
-            white-space: normal;
-            word-break: break-all;
-            line-height: 1.2;
-            max-height: 2.4em; /* 最大2行 */
-            overflow: hidden;
-        }
-        /* ホバー時のポップアップ表示を削除 */
-        /* .card-text:hover {
-            max-height: none;
-            overflow: visible;
-            background-color: #fff;
-            position: absolute;
-            z-index: 1000;
-            padding: 5px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            width: max-content;
-            max-width: 300px;
-        } */
-        .btn-icon {
-            width: 32px;
-            padding: 4px;
-            text-align: center;
-        }
-        .btn-icon i {
-            margin-right: 0;
-        }
-        .btn-toggle-task {
-            background-color: #007bff;
-            color: white;
-        }
-        .btn-toggle-task:hover {
-            background-color: #0056b3;
-            color: white;
-        }
-        .task-title {
-            font-family: 'Noto Sans JP', 'ヒラギノ角ゴ Pro', 'メイリオ', '游ゴシック', 'Courier New', Courier, monospace;
-            color: #00bcd4;
-            font-size: 1.5em;
-            font-weight: 500;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 0.5rem;
-        }
-    </style>
-</head>
-<body>
-    <!-- ダッシュボード -->
-    <h1>ダッシュボード</h1>
-    <div class="tab-buttons">
-        {% for person in people %}
-        <div class="tab-button" id="button-{{ person.id }}" onclick="window.showTab({{ person.id }})">
-            {{ person.name }}
-        </div>
-        {% endfor %}
-    </div>
+<h1>ダッシュボード</h1>
+<div class="tab-buttons">
     {% for person in people %}
-    <div class="tab" id="tab-{{ person.id }}">
-        <h2>{{ person.name }}のタスク</h2>
-        {% set sorted_tasks = person.sorted_tasks_title %}
-        {% if sorted_tasks %}
-        {% for task in sorted_tasks %}
-        {% set followup_class = task.follow_up_date|followup_style(today) %}
-        <div class="task {{ followup_class }}" id="task-{{ task.id }}" data-task-id="{{ task.id }}">
-            <!-- ステータスボタンの表示 -->
-            <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
-                {% if task.status == 'not_started' %}未着手
-                {% elif task.status == 'pending' %}保留中
-                {% elif task.status == 'in_progress' %}進行中
-                {% elif task.status == 'completed' %}完了
-                {% else %}不明{% endif %}
-            </button>
-    
-            <!-- タイトルをリンクに変更 -->
-            <a href="#" class="task-title-link" onclick="window.loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">
-                {{ task.title }}
-            </a>
-    
-            <!-- フォロー日 -->
-            <span class="follow-up-date" data-task-id="{{ task.id }}" onclick="window.editFollowUpDate({{ task.id }})">
-                フォロー日: <span id="follow-up-date-display-{{ task.id }}">{{ task.follow_up_date|format_date }}</span>
-            </span>
-        </div>
-        {% endfor %}
-        {% else %}
-        <p>タスクがありません。</p>
-        {% endif %}
+    <div class="tab-button" id="button-{{ person.id }}" onclick="window.showTab({{ person.id }})">
+        {{ person.name }}
     </div>
     {% endfor %}
-    
-    <!-- タスク一覧 -->
-    <div class="card mt-3">
-        <div class="card-body">
-            <h4 id="task-title" class="card-title">{{ person_name if person_name else "タスク一覧" }}</h4>
-            <ul id="task-list" class="list-group mt-3">
-                {% for task in tasks %}
-                <li id="task-{{ task.id }}" class="list-group-item task-item" data-task-id="{{ task.id }}">
-                    <!-- タイトルを追加 -->
-                    <div class="task-title mb-3">{{ task.title if task.title else "(タイトルなし)" }}</div>
-                    
-                    <div class="task-content" style="max-height: 400px; overflow: hidden;">
-                        {{ task.content | safe }}
-                    </div>
-                    {% if task.person %}
-                    <br><strong>担当者:</strong> {{ task.person.name }}
-                    {% else %}
-                    <br><strong>担当者:</strong> 未割り当て
-                    {% endif %}
-                    <br><strong>最終更新日:</strong> {{ task.last_updated | format_datetime_jst }}
-                    <br><strong>フォロー日:</strong> {{ task.follow_up_date | format_date }}
-                    <br><strong>進捗状況:</strong>
-                    {% if task.status == 'not_started' %}未着手
-                    {% elif task.status == 'pending' %}保留中
-                    {% elif task.status == 'in_progress' %}進行中
-                    {% elif task.status == 'completed' %}完了
-                    {% else %}不明{% endif %}
-                    
-                    <!-- 添付ファイルの表示 -->
-                    {% if task.uploads %}
-                    <hr>
-                    <h6><strong>添付ファイル:</strong></h6>
-                    <div class="row">
-                        {% for upload in task.uploads %}
-                        <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
-                            <div class="card">
-                                <!-- 拡張子ごとにアイコンを切り替え -->
-                                {% if upload.filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.tiff', '.tif', '.svg', '.ico', '.heic', '.heif')) %}
-                                <img src="{{ upload.url }}" alt="Thumbnail" class="card-img-top thumbnail">
-                                {% elif upload.filename.endswith('.pdf') %}
-                                <div class="card-img-top text-center p-4 bg-light">
-                                    <i class="fas fa-file-pdf fa-3x text-danger"></i>
-                                </div>
-                                {% elif upload.filename.endswith(('.txt', '.md', '.rtf', '.log', '.json', '.xml', '.html', '.htm', '.css', '.js', '.py', '.java', '.cpp', '.c', '.rb')) %}
-                                <div class="card-img-top text-center p-4 bg-light">
-                                    <i class="fas fa-file-alt fa-3x text-primary"></i>
-                                </div>
-                                {% elif upload.filename.endswith(('.xls', '.xlsx', '.xlsm', '.csv')) %}
-                                <div class="card-img-top text-center p-4 bg-light">
-                                    <i class="fas fa-file-excel fa-3x text-success"></i>
-                                </div>
-                                {% elif upload.filename.endswith(('.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.iso', '.tgz', '.tar.gz', '.tar.bz2')) %}
-                                <div class="card-img-top text-center p-4 bg-light">
-                                    <i class="fas fa-file-archive fa-3x text-warning"></i>
-                                </div>
-                                {% elif upload.filename.endswith('.msg') %}
-                                <div class="card-img-top text-center p-4 bg-light">
-                                    <i class="fas fa-envelope fa-3x text-info"></i>
-                                </div>
-                                {% else %}
-                                <div class="card-img-top text-center p-4 bg-light">
-                                    <i class="fas fa-file fa-3x text-muted"></i>
-                                </div>
-                                {% endif %}
-                                <div class="card-body p-2">
-                                    <p class="card-text text-truncate" title="{{ upload.filename }}">{{ upload.filename }}</p>
-                                </div>
-                                <div class="card-footer d-flex justify-content-between align-items-center p-2">
-                                    <button class="btn btn-sm btn-outline-secondary btn-icon" onclick="copyToClipboard('{{ upload.url }}')" title="URLコピー">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                    <a href="{{ upload.url }}" target="_blank" class="btn btn-sm btn-outline-primary btn-icon" title="ダウンロード">
-                                        <i class="fas fa-download"></i>
-                                    </a>
-                                    <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" style="display:inline;">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" onclick="return confirm('このファイルを削除してもよろしいですか？');" title="削除">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                            <small class="d-block text-muted mt-1">アップロード日時: {{ upload.upload_time | format_datetime_jst }}</small>
-                            <small class="d-block text-muted">ファイルサイズ: {{ upload.filesize | filesizeformat }}</small>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                    
-                    <!-- 折りたたみボタン -->
-                    <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
-                    
-                    <!-- 削除ボタンと編集ボタン -->
-                    <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
-                        <button type="submit" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</button>
-                    </form>
-                    <a href="/edit/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" class="btn btn-sm btn-info float-right">編集</a>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
+</div>
+{% for person in people %}
+<div class="tab" id="tab-{{ person.id }}">
+    <h2>{{ person.name }}のタスク</h2>
+    {% set sorted_tasks = person.sorted_tasks_title %}
+    {% if sorted_tasks %}
+    {% for task in sorted_tasks %}
+    {% set followup_class = task.follow_up_date|followup_style(today) %}
+    <div class="task {{ followup_class }}" id="task-{{ task.id }}" data-task-id="{{ task.id }}">
+        <!-- ステータスボタンの表示 -->
+        <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
+            {% if task.status == 'not_started' %}未着手
+            {% elif task.status == 'pending' %}保留中
+            {% elif task.status == 'in_progress' %}進行中
+            {% elif task.status == 'completed' %}完了
+            {% else %}不明{% endif %}
+        </button>
+
+        <!-- タイトルをリンクに変更 -->
+        <a href="#" class="task-title-link" onclick="window.loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">
+            {{ task.title }}
+        </a>
+
+        <!-- フォロー日 -->
+        <span class="follow-up-date" data-task-id="{{ task.id }}" onclick="window.editFollowUpDate({{ task.id }})">
+            フォロー日: <span id="follow-up-date-display-{{ task.id }}">{{ task.follow_up_date|format_date }}</span>
+        </span>
     </div>
-    
-    <!-- JavaScript -->
-    <script>
-    // コピー機能
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(function() {
-            alert('URLをコピーしました: ' + text);
-        }, function(err) {
-            alert('コピーに失敗しました: ' + err);
-        });
+    {% endfor %}
+    {% else %}
+    <p>タスクがありません。</p>
+    {% endif %}
+</div>
+{% endfor %}
+
+<!-- 必要なスタイルを追加 -->
+<style>
+    /* タブのスタイル */
+    .tab {
+        display: none;
     }
-    
-    // 折りたたみ機能
-    document.addEventListener('DOMContentLoaded', function() {
-        const toggleButtons = document.querySelectorAll('.btn-toggle-task');
-        
-        toggleButtons.forEach(button => {
-            const taskItem = button.closest('.task-item');
-            const content = taskItem.querySelector('.task-content');
-            
-            // コンテンツが省略されているかチェック
-            if (content.scrollHeight > content.clientHeight) {
-                // 省略されている場合、ボタンを表示
-                button.style.display = 'inline-block';
-                
-                button.addEventListener('click', function() {
-                    if (content.style.maxHeight === 'none') {
-                        content.style.maxHeight = '400px'; // 折りたたむ
-                        this.textContent = 'もっと見る';
-                    } else {
-                        content.style.maxHeight = 'none'; // 展開
-                        this.textContent = '折りたたむ';
-                    }
-                });
-            }
-        });
-    });
-    
-    // ダッシュボード関連のJavaScript
+    .tab.active {
+        display: block;
+    }
+    .tab-buttons {
+        display: flex;
+        margin-bottom: 10px;
+    }
+    .tab-button {
+        padding: 10px;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        margin-right: 5px;
+    }
+    .tab-button.active {
+        font-weight: bold;
+        background-color: #eee;
+    }
+    /* タスクのスタイル */
+    .task {
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        display: flex;
+        align-items: center;
+    }
+    /* フォロー日の背景色と文字色 */
+    .task.today {
+        background-color: #FFCDD2; /* 薄い赤色 */
+        color: black;
+    }
+    .task.overdue {
+        background-color: #FFC0CB; /* ピンク色 */
+        color: black;
+    }
+    /* ステータスボタンのスタイル */
+    .status-button {
+        width: 100px; /* 幅を固定して左端を揃える */
+        padding: 5px 10px;
+        border-radius: 3px;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+    .status-button.pending {
+        background-color: orange;
+    }
+    .status-button.in_progress {
+        background-color: blue;
+    }
+    .status-button.completed {
+        background-color: green;
+    }
+    .task-title-link {
+        margin-right: 10px;
+        flex-grow: 1;
+        text-decoration: none;
+        color: white; /* 白い文字 */
+    }
+    .task-title-link:hover {
+        text-decoration: underline;
+    }
+    .follow-up-date {
+        margin-right: 10px;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+    /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
+    .task.today .task-title-link,
+    .task.overdue .task-title-link {
+        color: black; /* 黒い文字 */
+    }
+</style>
+
+<!-- JavaScriptを追加 -->
+<script>
     window.editFollowUpDate = function(taskId) {
         var dateSpan = document.getElementById('follow-up-date-display-' + taskId);
         var currentDate = dateSpan.textContent.trim();
@@ -406,102 +185,4 @@
             });
         });
     };
-    
-    window.showTab = function(personId) {
-        // タブの表示切替ロジックをここに実装
-        const tabs = document.querySelectorAll('.tab');
-        const buttons = document.querySelectorAll('.tab-button');
-        tabs.forEach(tab => {
-            tab.classList.remove('active');
-        });
-        buttons.forEach(button => {
-            button.classList.remove('active');
-        });
-        document.getElementById('tab-' + personId).classList.add('active');
-        document.getElementById('button-' + personId).classList.add('active');
-    };
-    
-    window.cycleStatus = function(taskId) {
-        // ステータスをサイクルするロジックをここに実装
-        // 例: 未着手 -> 保留中 -> 進行中 -> 完了 -> 未着手
-        const statusButton = document.getElementById('status-button-' + taskId);
-        const currentStatus = statusButton.classList.contains('not_started') ? 'not_started' :
-                              statusButton.classList.contains('pending') ? 'pending' :
-                              statusButton.classList.contains('in_progress') ? 'in_progress' :
-                              statusButton.classList.contains('completed') ? 'completed' : 'unknown';
-        let newStatus;
-        switch(currentStatus) {
-            case 'not_started':
-                newStatus = 'pending';
-                break;
-            case 'pending':
-                newStatus = 'in_progress';
-                break;
-            case 'in_progress':
-                newStatus = 'completed';
-                break;
-            case 'completed':
-                newStatus = 'not_started';
-                break;
-            default:
-                newStatus = 'unknown';
-        }
-        // サーバーに新しいステータスを送信して更新
-        fetch('/update_status/' + taskId, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status: newStatus }),
-            credentials: 'include'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // ボタンのクラスを更新
-                statusButton.classList.remove('not_started', 'pending', 'in_progress', 'completed', 'unknown');
-                statusButton.classList.add(newStatus);
-                // ボタンのテキストを更新
-                let statusText;
-                switch(newStatus) {
-                    case 'not_started':
-                        statusText = '未着手';
-                        break;
-                    case 'pending':
-                        statusText = '保留中';
-                        break;
-                    case 'in_progress':
-                        statusText = '進行中';
-                        break;
-                    case 'completed':
-                        statusText = '完了';
-                        break;
-                    default:
-                        statusText = '不明';
-                }
-                statusButton.textContent = statusText;
-            } else {
-                alert('ステータスの更新に失敗しました。');
-            }
-        })
-        .catch(error => {
-            console.error('エラーが発生しました:', error);
-            alert('ステータスの更新中にエラーが発生しました。');
-        });
-    };
-    
-    window.loadContent = function(url, elementId) {
-        // コンテンツをロードするロジックをここに実装
-        // 例: AJAXリクエストでコンテンツを取得して表示
-        fetch(url)
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById(elementId).innerHTML = html;
-            })
-            .catch(error => {
-                console.error('コンテンツの読み込み中にエラーが発生しました:', error);
-            });
-    };
-    </script>
-</body>
-</html>
+</script>
