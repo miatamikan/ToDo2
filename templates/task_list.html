@@ -134,8 +134,11 @@
         white-space: normal;
         word-break: break-all;
         line-height: 1.2;
-        max-height: 2.4em; /* 最大2行 */
+        max-height: 3.6em; /* 3行分（1.2em × 3） */
         overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
     }
         
     .card-text:hover {
