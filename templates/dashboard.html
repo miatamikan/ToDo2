@@ -13,7 +13,7 @@
     {% if sorted_tasks %}
     {% for task in sorted_tasks %}
     {% set followup_class = task.follow_up_date|followup_style(today) %}
-    <div class="task {{ followup_class }}">
+    <div class="task {{ followup_class }}" id="task-{{ task.id }}" data-task-id="{{ task.id }}">
         <!-- ステータスボタンの表示 -->
         <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
             {% if task.status == 'not_started' %}未着手
@@ -42,82 +42,82 @@
 
 <!-- 必要なスタイルを追加 -->
 <style>
-        /* タブのスタイル */
-        .tab {
-            display: none;
-        }
-        .tab.active {
-            display: block;
-        }
-        .tab-buttons {
-            display: flex;
-            margin-bottom: 10px;
-        }
-        .tab-button {
-            padding: 10px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            margin-right: 5px;
-        }
-        .tab-button.active {
-            font-weight: bold;
-            background-color: #eee;
-        }
-        /* タスクのスタイル */
-        .task {
-            padding: 10px;
-            border-bottom: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-        }
-        /* フォロー日の背景色と文字色 */
-        .task.today {
-            background-color: #FFCDD2; /* 薄い赤色 */
-            color: black;
-        }
-        .task.overdue {
-            background-color: #FFC0CB; /* ピンク色 */
-            color: black;
-        }
-        /* ステータスボタンのスタイル */
-        .status-button {
-            width: 100px; /* 幅を固定して左端を揃える */
-            padding: 5px 10px;
-            border-radius: 3px;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-        .status-button.pending {
-            background-color: orange;
-        }
-        .status-button.in_progress {
-            background-color: blue;
-        }
-        .status-button.completed {
-            background-color: green;
-        }
-        .task-title-link {
-            margin-right: 10px;
-            flex-grow: 1;
-            text-decoration: none;
-            color: white; /* 白い文字 */
-        }
-        .task-title-link:hover {
-            text-decoration: underline;
-        }
-        .follow-up-date {
-            margin-right: 10px;
-            flex-shrink: 0;
-            cursor: pointer;
-        }
-        /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
-        .task.today .task-title-link,
-        .task.overdue .task-title-link {
-            color: black; /* 黒い文字 */
-        }
+    /* タブのスタイル */
+    .tab {
+        display: none;
+    }
+    .tab.active {
+        display: block;
+    }
+    .tab-buttons {
+        display: flex;
+        margin-bottom: 10px;
+    }
+    .tab-button {
+        padding: 10px;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        margin-right: 5px;
+    }
+    .tab-button.active {
+        font-weight: bold;
+        background-color: #eee;
+    }
+    /* タスクのスタイル */
+    .task {
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        display: flex;
+        align-items: center;
+    }
+    /* フォロー日の背景色と文字色 */
+    .task.today {
+        background-color: #FFCDD2; /* 薄い赤色 */
+        color: black;
+    }
+    .task.overdue {
+        background-color: #FFC0CB; /* ピンク色 */
+        color: black;
+    }
+    /* ステータスボタンのスタイル */
+    .status-button {
+        width: 100px; /* 幅を固定して左端を揃える */
+        padding: 5px 10px;
+        border-radius: 3px;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+    .status-button.pending {
+        background-color: orange;
+    }
+    .status-button.in_progress {
+        background-color: blue;
+    }
+    .status-button.completed {
+        background-color: green;
+    }
+    .task-title-link {
+        margin-right: 10px;
+        flex-grow: 1;
+        text-decoration: none;
+        color: white; /* 白い文字 */
+    }
+    .task-title-link:hover {
+        text-decoration: underline;
+    }
+    .follow-up-date {
+        margin-right: 10px;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+    /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
+    .task.today .task-title-link,
+    .task.overdue .task-title-link {
+        color: black; /* 黒い文字 */
+    }
 </style>
 
 <!-- JavaScriptを追加 -->
@@ -163,19 +163,25 @@
                 newSpan.textContent = newDateText;
                 newInput.parentNode.replaceChild(newSpan, newInput);
 
-                // タスクの背景色を更新
-                var taskDiv = document.querySelector('.task[data-task-id="' + taskId + '"]');
-                if (taskDiv) {
-                    taskDiv.classList.remove('today', 'overdue');
-                    var today = new Date();
-                    var selectedDate = new Date(data.new_date);
-                    var diff = (selectedDate - today) / (1000 * 60 * 60 * 24);
-                    if (diff < 0) {
-                        taskDiv.classList.add('overdue');
-                    } else if (diff === 0) {
-                        taskDiv.classList.add('today');
+                // タスクの背景色を即時更新
+                var taskElement = document.getElementById('task-' + taskId);
+                if (taskElement) {
+                    taskElement.classList.remove('today', 'overdue');
+                    if (data.new_date) {
+                        var today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        var selectedDate = new Date(data.new_date);
+                        if (selectedDate.getTime() === today.getTime()) {
+                            taskElement.classList.add('today');
+                        } else if (selectedDate < today) {
+                            taskElement.classList.add('overdue');
+                        }
                     }
                 }
+            })
+            .catch(error => {
+                console.error('エラーが発生しました:', error);
+                // エラーハンドリング（必要に応じて追加）
             });
         });
     };
