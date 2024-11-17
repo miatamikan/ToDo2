@@ -5,9 +5,7 @@ import configparser
 import time
 from datetime import datetime, date
 import pytz
-from flask import send_from_directory
-from sqlalchemy import text, nulls_last
-from werkzeug.utils import secure_filename
+from sqlalchemy import text
 import re
 import unicodedata
 import netifaces  # netifacesを追加
@@ -30,18 +28,19 @@ def get_client_mac():
     """クライアントのMACアドレスを取得する"""
     # リモートアドレスを取得
     remote_addr = request.remote_addr
-    
+
     # arpテーブルからMACアドレスを検索
     for interface in netifaces.interfaces():
         try:
-            if netifaces.AF_LINK in netifaces.ifaddresses(interface):
-                # インターフェースのMACアドレス情報を取得
-                mac_info = netifaces.ifaddresses(interface)[netifaces.AF_LINK]
-                for item in mac_info:
-                    if 'addr' in item:
-                        mac = item['addr'].upper()
-                        if is_valid_mac(mac):
-                            return mac
+            addrs = netifaces.ifaddresses(interface)
+            if netifaces.AF_INET in addrs:
+                for link in addrs[netifaces.AF_INET]:
+                    if link.get('addr') == remote_addr:
+                        mac_addrs = addrs.get(netifaces.AF_LINK)
+                        if mac_addrs:
+                            mac = mac_addrs[0]['addr'].upper()
+                            if is_valid_mac(mac):
+                                return mac
         except:
             continue
     return None
@@ -51,8 +50,8 @@ def is_valid_mac(mac_address):
     """有効なMACアドレスかどうかを確認する"""
     if not mac_address:
         return False
-    # MACアドレスのパターン（XX-XX-XX-XX-XX-XX形式）
-    pattern = re.compile(r'^([0-9A-F]{2}-){5}[0-9A-F]{2}$')
+    # MACアドレスのパターン（XX:XX:XX:XX:XX:XX形式）
+    pattern = re.compile(r'^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$')
     return bool(pattern.match(mac_address))
 
 # config.iniから許可されたMACアドレスのリストを取得する関数
@@ -60,7 +59,7 @@ def get_allowed_macs():
     """config.iniから許可されたMACアドレスのリストを取得する"""
     config = configparser.ConfigParser()
     config.read('config.ini')
-    
+
     # DEFAULT セクションから allowed_macs を取得
     if 'DEFAULT' in config and 'allowed_macs' in config['DEFAULT']:
         # カンマ区切りのMACアドレスリストを分割
@@ -75,90 +74,15 @@ def mac_auth_required(f):
     def decorated_function(*args, **kwargs):
         client_mac = get_client_mac()
         allowed_macs = get_allowed_macs()
-        
+
         if not client_mac or client_mac not in allowed_macs:
             flash('このデバイスからのアクセスは許可されていません。')
-            return redirect(url_for('login'))
-        
+            return render_template('access_denied.html'), 403  # アクセス拒否ページを表示
+
         return f(*args, **kwargs)
     return decorated_function
 
-# データベースファイルをダウンロードするためのエンドポイント
-@app.route('/download_db')
-@login_required  # ログインが必要なエンドポイント
-def download_db():
-    db_path = '/persistent'  # データベースファイルが格納されているディレクトリ
-    return send_from_directory(db_path, 'todo.db', as_attachment=True)
-
-# データベースファイルをアップロードして適用するためのエンドポイント
-@app.route('/upload_db', methods=['GET', 'POST'])
-@login_required  # ログインが必要なエンドポイント
-def upload_db():
-    if request.method == 'POST':
-        if 'db_file' not in request.files:
-            return "No file part", 400
-        file = request.files['db_file']
-        if file.filename == '':
-            return "No selected file", 400
-        if file:
-            file_path = '/persistent/todo.db'
-            file.save(file_path)
-            return "Database uploaded and replaced successfully!", 200
-    return '''
-    <form method="POST" enctype="multipart/form-data">
-        <input type="file" name="db_file">
-        <input type="submit" value="Upload">
-    </form>
-    '''
-
-# データベースファイルを削除するためのエンドポイント
-@app.route('/delete_db', methods=['POST'])
-@login_required  # ログインが必要なエンドポイント
-def delete_db():
-    db_path = '/persistent/todo.db'
-    try:
-        if os.path.exists(db_path):
-            os.remove(db_path)  # データベースファイルを削除
-            return "Database deleted successfully!", 200
-        else:
-            return "Database file not found.", 404
-    except Exception as e:
-        return f"An error occurred while deleting the database: {e}", 500
-
-# データベース削除ページの表示
-@app.route('/delete_db_page')
-@login_required  # ログインが必要なエンドポイント
-def delete_db_page():
-    return render_template('delete_db.html')
-
-# データベース編集ページの表示
-@app.route('/db_edit', methods=['GET', 'POST'])
-@login_required  # ログインが必要なエンドポイント
-def db_edit():
-    result = None
-    error = None
-    if request.method == 'POST':
-        sql_query = request.form.get('sql_query')
-        try:
-            # SQLクエリを実行する
-            with db.engine.connect() as connection:
-                # text関数を使用してSQLクエリを実行
-                result_proxy = connection.execute(text(sql_query))
-
-                if result_proxy.returns_rows:
-                    # 各列の結果をタプル形式に変換して、より分かりやすく表示
-                    result = [list(row) for row in result_proxy]
-                else:
-                    result = "Query executed successfully."
-        except Exception as e:
-            error = f"Error: {e}"
-
-    return render_template('db_edit.html', result=result, error=error)
-
-# 日本標準時に変換する関数
-def convert_to_jst(utc_time):
-    jst = pytz.timezone('Asia/Tokyo')
-    return utc_time.astimezone(jst)
+# 以下、アプリケーションのルートや関数を定義
 
 # config.ini から設定を読み込む
 config = configparser.ConfigParser()
@@ -231,7 +155,7 @@ class Person(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False, unique=True)
     order = db.Column(db.Integer, nullable=False, default=0)
-    tasks = db.relationship('Task', backref='person', lazy='dynamic')  # order_byを削除し、lazyを'dynamic'に変更
+    tasks = db.relationship('Task', backref='person', lazy='dynamic')
 
     @property
     def sorted_tasks_title(self):
@@ -284,7 +208,6 @@ login_attempts = {}
 
 # ログインページ
 @app.route('/login', methods=['GET', 'POST'])
-@mac_auth_required  # MAC認証を追加
 def login():
     if request.method == 'POST':
         input_user_id = request.form['user_id']
@@ -329,6 +252,7 @@ def logout():
 
 # ルートページ
 @app.route('/')
+@mac_auth_required  # MACアドレス認証を追加
 def index():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
@@ -337,9 +261,12 @@ def index():
     sort_option = request.args.get('sort')
     return render_template('index.html', people=people, person_id=person_id, sort_option=sort_option)
 
+# 以下、他のルートにも必要に応じて `@mac_auth_required` を適用します
+
 # 全タスクの取得
 @app.route('/all_tasks')
 @login_required
+@mac_auth_required
 def all_tasks():
     sort_option = request.args.get('sort', 'priority')
     past_log_person = Person.query.filter_by(name='過去ログ').first()
@@ -351,9 +278,12 @@ def all_tasks():
         tasks = Task.query.filter(Task.person_id != past_log_person.id).order_by(Task.priority).all()
     return render_template('task_list.html', tasks=tasks, person_name=None, person_id=None, sort_option=sort_option)
 
+# その他のルートにも `@mac_auth_required` を適用
+
 # 担当者別タスクの取得
 @app.route('/person_tasks/<int:person_id>')
 @login_required
+@mac_auth_required
 def person_tasks(person_id):
     person = Person.query.get_or_404(person_id)
     sort_option = request.args.get('sort', 'priority')
@@ -367,9 +297,9 @@ def person_tasks(person_id):
 
 # タスクの順序更新
 @app.route('/update_task_order', methods=['POST'])
+@login_required
+@mac_auth_required
 def update_task_order():
-    if not session.get('logged_in'):
-        return jsonify({'status': 'failed', 'message': 'Unauthorized'}), 401
     data = request.get_json()
     task_order = data.get('task_order', [])
     for index, task_id in enumerate(task_order):
@@ -381,9 +311,9 @@ def update_task_order():
 
 # 担当者の順序更新
 @app.route('/update_person_order', methods=['POST'])
+@login_required
+@mac_auth_required
 def update_person_order():
-    if not session.get('logged_in'):
-        return jsonify({'status': 'failed', 'message': 'Unauthorized'}), 401
     data = request.get_json()
     person_order = data.get('person_order', [])
     for index, person_id in enumerate(person_order):
@@ -395,9 +325,9 @@ def update_person_order():
 
 # 担当者の追加・編集・削除
 @app.route('/edit_person', methods=['GET', 'POST'])
+@login_required
+@mac_auth_required
 def edit_person():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
     people = Person.query.order_by(Person.order).all()
     if request.method == 'POST':
         action = request.form.get('action')
@@ -436,9 +366,9 @@ def edit_person():
 
 # タスクの追加
 @app.route('/add', methods=['GET', 'POST'])
+@login_required
+@mac_auth_required
 def add_task():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
     people = Person.query.order_by(Person.order).all()
     if request.method == 'POST':
         title = request.form['title']
@@ -446,18 +376,18 @@ def add_task():
         status = request.form['status']
         person_id = request.form.get('person_id')
         follow_up_date_str = request.form.get('follow_up_date')
-        
+
         if follow_up_date_str:
             follow_up_date = datetime.strptime(follow_up_date_str, '%Y-%m-%d')
         else:
             follow_up_date = None
-            
+
         min_priority = db.session.query(db.func.min(Task.priority)).scalar()
         if min_priority is None:
             min_priority = 0
         else:
             min_priority -= 1
-            
+
         new_task = Task(
             title=title,
             content=content,
@@ -497,9 +427,9 @@ def add_task():
 
 # タスクの編集
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+@mac_auth_required
 def edit_task(id):
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
     task = Task.query.get_or_404(id)
     people = Person.query.order_by(Person.order).all()
     person_id = request.args.get('person_id')
@@ -511,7 +441,7 @@ def edit_task(id):
         task.status = request.form['status']
         task.person_id = request.form.get('person_id')
         follow_up_date_str = request.form.get('follow_up_date')
-        
+
         if follow_up_date_str:
             task.follow_up_date = datetime.strptime(follow_up_date_str, '%Y-%m-%d')
         else:
@@ -603,9 +533,9 @@ def filesizeformat(value):
 
 # タスクの削除（担当者を過去ログに変更）
 @app.route('/delete/<int:id>', methods=['POST'])
+@login_required
+@mac_auth_required
 def delete_task(id):
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
     task = Task.query.get_or_404(id)
     past_log_person = Person.query.filter_by(name='過去ログ').first()
     if task.person_id != past_log_person.id:
@@ -632,9 +562,9 @@ def delete_task(id):
     return redirect(redirect_url)
 
 @app.route('/past_log_tasks')
+@login_required
+@mac_auth_required
 def past_log_tasks():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
     past_log_person = Person.query.filter_by(name='過去ログ').first()
     tasks = Task.query.filter_by(person_id=past_log_person.id).order_by(Task.priority).all()
     return render_template('task_list.html', tasks=tasks, person_name='過去ログ')
@@ -642,6 +572,7 @@ def past_log_tasks():
 # ファイルアップロード機能のエンドポイント
 @app.route('/upload', methods=['GET', 'POST'])
 @login_required
+@mac_auth_required
 def upload_file():
     if request.method == 'POST':
         task_id = request.form.get('task_id')
@@ -688,12 +619,14 @@ def upload_file():
 # アップロードされたファイルを取得するエンドポイント
 @app.route('/uploads/<filename>')
 @login_required
+@mac_auth_required
 def uploaded_file(filename):
     return send_file(os.path.join(UPLOAD_DIR, filename))
 
 # アップロードされたファイルを削除するエンドポイント
 @app.route('/delete_file/<int:id>', methods=['POST'])
 @login_required
+@mac_auth_required
 def delete_file(id):
     file = Upload.query.get_or_404(id)
     try:
@@ -703,11 +636,11 @@ def delete_file(id):
         # データベースからエントリを削除
         db.session.delete(file)
         db.session.commit()
-        
+
         # AJAXリクエストの場合はJSONレスポンスを返す
         if request.headers.get('Content-Type') == 'application/json':
             return jsonify({'success': True, 'message': 'ファイルが削除されました'})
-        
+
         flash('ファイルが削除されました')
     except Exception as e:
         # エラーハンドリング
@@ -726,6 +659,7 @@ def robots_txt():
 # ダッシュボードのルートを追加
 @app.route('/dashboard')
 @login_required
+@mac_auth_required
 def dashboard():
     people = Person.query.order_by(Person.order).all()
     today = datetime.now(pytz.timezone('Asia/Tokyo')).date()
@@ -734,6 +668,7 @@ def dashboard():
 # タスクのステータスを更新するエンドポイントを追加
 @app.route('/update_status/<int:task_id>', methods=['POST'])
 @login_required
+@mac_auth_required
 def update_status(task_id):
     task = Task.query.get_or_404(task_id)
     status_cycle = ['not_started', 'pending', 'in_progress', 'completed']
@@ -752,6 +687,7 @@ def update_status(task_id):
 # フォロー日を更新するエンドポイントを追加
 @app.route('/update_follow_up_date/<int:task_id>', methods=['POST'])
 @login_required
+@mac_auth_required
 def update_follow_up_date(task_id):
     task = Task.query.get_or_404(task_id)
     new_date_str = request.form.get('new_date')
@@ -763,5 +699,10 @@ def update_follow_up_date(task_id):
     db.session.commit()
     return jsonify({'status': 'success', 'new_date': task.follow_up_date.strftime('%Y-%m-%d') if task.follow_up_date else None})
 
+# 日本標準時に変換する関数
+def convert_to_jst(utc_time):
+    jst = pytz.timezone('Asia/Tokyo')
+    return utc_time.astimezone(jst)
+
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
