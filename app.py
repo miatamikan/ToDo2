@@ -10,21 +10,78 @@ from sqlalchemy import text, nulls_last
 from werkzeug.utils import secure_filename
 import re
 import unicodedata
+import netifaces  # netifacesを追加
+from functools import wraps
 
 app = Flask(__name__)
 
 # ログインが必要なデコレータを作成
 def login_required(func):
-    from functools import wraps
-
     @wraps(func)
     def wrapper(*args, **kwargs):
         if not session.get('logged_in'):
             flash('ログインが必要です')
             return redirect(url_for('login'))
         return func(*args, **kwargs)
-
     return wrapper
+
+# クライアントのMACアドレスを取得する関数
+def get_client_mac():
+    """クライアントのMACアドレスを取得する"""
+    # リモートアドレスを取得
+    remote_addr = request.remote_addr
+    
+    # arpテーブルからMACアドレスを検索
+    for interface in netifaces.interfaces():
+        try:
+            if netifaces.AF_LINK in netifaces.ifaddresses(interface):
+                # インターフェースのMACアドレス情報を取得
+                mac_info = netifaces.ifaddresses(interface)[netifaces.AF_LINK]
+                for item in mac_info:
+                    if 'addr' in item:
+                        mac = item['addr'].upper()
+                        if is_valid_mac(mac):
+                            return mac
+        except:
+            continue
+    return None
+
+# 有効なMACアドレスかどうかを確認する関数
+def is_valid_mac(mac_address):
+    """有効なMACアドレスかどうかを確認する"""
+    if not mac_address:
+        return False
+    # MACアドレスのパターン（XX-XX-XX-XX-XX-XX形式）
+    pattern = re.compile(r'^([0-9A-F]{2}-){5}[0-9A-F]{2}$')
+    return bool(pattern.match(mac_address))
+
+# config.iniから許可されたMACアドレスのリストを取得する関数
+def get_allowed_macs():
+    """config.iniから許可されたMACアドレスのリストを取得する"""
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    
+    # DEFAULT セクションから allowed_macs を取得
+    if 'DEFAULT' in config and 'allowed_macs' in config['DEFAULT']:
+        # カンマ区切りのMACアドレスリストを分割
+        macs = [mac.strip() for mac in config['DEFAULT']['allowed_macs'].split(',')]
+        return [mac.upper() for mac in macs if is_valid_mac(mac)]
+    return []
+
+# MACアドレス認証を要求するデコレータ
+def mac_auth_required(f):
+    """MACアドレス認証を要求するデコレータ"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        client_mac = get_client_mac()
+        allowed_macs = get_allowed_macs()
+        
+        if not client_mac or client_mac not in allowed_macs:
+            flash('このデバイスからのアクセスは許可されていません。')
+            return redirect(url_for('login'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
 
 # データベースファイルをダウンロードするためのエンドポイント
 @app.route('/download_db')
@@ -227,6 +284,7 @@ login_attempts = {}
 
 # ログインページ
 @app.route('/login', methods=['GET', 'POST'])
+@mac_auth_required  # MAC認証を追加
 def login():
     if request.method == 'POST':
         input_user_id = request.form['user_id']
@@ -237,7 +295,6 @@ def login():
         if input_user_id not in login_attempts:
             login_attempts[input_user_id] = {'count': 0, 'first_attempt_time': current_time}
 
-        # 試行回数が3回を超えた場合のチェック
         attempts_info = login_attempts[input_user_id]
         if attempts_info['count'] >= 3:
             time_diff = current_time - attempts_info['first_attempt_time']
@@ -245,21 +302,18 @@ def login():
                 flash('ログイン試行回数が制限を超えました。1時間後に再度お試しください。')
                 return redirect(url_for('login'))
             else:
-                # 1時間経過していたら試行回数リセット
                 login_attempts[input_user_id] = {'count': 0, 'first_attempt_time': current_time}
 
         # 設定ファイルからのIDとパスワードを文字列として取得
         expected_user_id = str(USER_ID)
         expected_password = str(PASSWORD)
 
-        # IDとパスワードの照合
         if input_user_id == expected_user_id and input_password == expected_password:
             session['logged_in'] = True
             flash('ログインに成功しました！')
-            login_attempts[input_user_id] = {'count': 0, 'first_attempt_time': current_time}  # 成功したらリセット
+            login_attempts[input_user_id] = {'count': 0, 'first_attempt_time': current_time}
             return redirect(url_for('index'))
         else:
-            # ログイン失敗時のカウント更新
             login_attempts[input_user_id]['count'] += 1
             flash('IDまたはパスワードが間違っています')
             return redirect(url_for('login'))
@@ -710,4 +764,4 @@ def update_follow_up_date(task_id):
     return jsonify({'status': 'success', 'new_date': task.follow_up_date.strftime('%Y-%m-%d') if task.follow_up_date else None})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
