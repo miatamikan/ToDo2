@@ -73,8 +73,8 @@
                                 <a href="{{ upload.url }}" target="_blank" class="btn btn-sm btn-outline-primary btn-icon" title="ダウンロード">
                                     <i class="fas fa-download"></i>
                                 </a>
-                                <button type="button" class="btn btn-sm btn-outline-danger btn-icon" 
-                                        onclick="window.deleteFile({{ upload.id }})" title="削除">
+                                <!-- 修正された削除ボタン -->
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="deleteFile({{ upload.id }}, this)" title="削除">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>
@@ -247,35 +247,34 @@ window.deleteTask = function(taskId, personId, sortOption) {
     });
 };
 
-// ファイル削除をAjax化する機能（オプション）
-window.deleteFile = function(uploadId) {
+// 修正されたファイル削除機能
+async function deleteFile(fileId, buttonElement) {
     if (!confirm('このファイルを削除してもよろしいですか？')) {
         return;
     }
+    
+    try {
+        const response = await fetch(`/delete_file/${fileId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin'
+        });
 
-    fetch('/delete_file/' + uploadId, { // エンドポイントは適宜変更してください
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({}) // 必要に応じてCSRFトークンなどを追加
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
+        if (response.ok) {
+            // 成功したら該当の要素を削除
+            const fileCard = buttonElement.closest('.col-lg-2, .col-md-3, .col-sm-4, .col-6');
+            if (fileCard) {
+                fileCard.remove();
+            }
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'ファイルの削除に失敗しました');
         }
-        // ファイルカードを削除
-        const fileButton = event.target;
-        const fileCard = fileButton.closest('.col-lg-2, .col-md-3, .col-sm-4, .col-6');
-        if (fileCard) {
-            fileCard.remove();
-        }
-    })
-    .catch(error => {
+    } catch (error) {
         console.error('Error:', error);
         alert('ファイルの削除中にエラーが発生しました。');
-    });
-};
+    }
+}
 </script>
