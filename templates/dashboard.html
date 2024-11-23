@@ -1,273 +1,166 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>ダッシュボード</title>
-    <!-- 必要なスタイルを追加 -->
-    <style>
-        /* タブのスタイル */
-        .tab {
-            display: none;
-        }
-        .tab.active {
-            display: block;
-        }
-        .tab-buttons {
-            display: flex;
-            margin-bottom: 10px;
-        }
-        .tab-button {
-            padding: 10px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            margin-right: 5px;
-        }
-        .tab-button.active {
-            font-weight: bold;
-            background-color: #eee;
-        }
-        /* タスクのスタイル */
-        .task {
-            padding: 10px;
-            border-bottom: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-            background-color: #f9f9f9; /* デフォルトの背景色 */
-        }
-        /* フォロー日の背景色と文字色 */
-        .task.today {
-            background-color: #FFCDD2; /* 薄い赤色 */
-            color: black;
-        }
-        .task.overdue {
-            background-color: #FFC0CB; /* ピンク色 */
-            color: black;
-        }
-        /* ステータスボタンのスタイル */
-        .status-button {
-            width: 100px; /* 幅を固定して左端を揃える */
-            padding: 5px 10px;
-            border-radius: 3px;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-        .status-button.pending {
-            background-color: orange;
-        }
-        .status-button.in_progress {
-            background-color: blue;
-        }
-        .status-button.completed {
-            background-color: green;
-        }
-        .status-button.not_started {
-            background-color: gray;
-        }
-        .status-button.unknown {
-            background-color: black;
-        }
-        /* タスクタイトルリンクのスタイル */
-        .task-title-link {
-            margin-right: 10px;
-            flex-grow: 1;
-            text-decoration: none;
-            color: white; /* デフォルトの文字色 */
-        }
-        .task-title-link:hover {
-            text-decoration: underline;
-        }
-        /* フォロー日のスタイル */
-        .follow-up-date {
-            margin-right: 10px;
-            flex-shrink: 0;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-        }
-        /* フォロー日のホバースタイル（編集可能なことを示す） */
-        .follow-up-date:hover {
-            text-decoration: underline;
-            color: #007bff;
-        }
-        /* 削除ボタンのスタイル調整 */
-        .follow-up-date .btn {
-            padding: 2px 5px;
-            font-size: 0.8em;
-        }
-        /* タスク削除ボタンのスタイル */
-        .delete-task-button {
-            padding: 0.25rem 0.5rem;
-            margin-left: 10px;
-            background-color: #dc3545; /* Bootstrapのdanger色 */
-            border: none;
-            color: white;
-            cursor: pointer;
-            border-radius: 3px;
-            flex-shrink: 0;
-        }
-        .delete-task-button i {
-            font-size: 0.875rem;
-        }
-        /* フォロー日の背景色に応じたタスクタイトルリンクの文字色 */
-        .task.today .task-title-link,
-        .task.overdue .task-title-link {
-            color: black; /* 黒い文字 */
-        }
-    </style>
-    <!-- Font Awesome を使用する場合は以下を追加 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-    <h1>ダッシュボード</h1>
-    <div class="tab-buttons">
-        {% for person in people %}
-        <div class="tab-button" id="button-{{ person.id }}" onclick="window.showTab({{ person.id }})">
-            {{ person.name }}
-        </div>
-        {% endfor %}
-    </div>
+<h1>ダッシュボード</h1>
+<div class="tab-buttons">
     {% for person in people %}
-    <div class="tab" id="tab-{{ person.id }}">
-        <h2>{{ person.name }}のタスク</h2>
-        {% set sorted_tasks = person.sorted_tasks_title %}
-        {% if sorted_tasks %}
-        {% for task in sorted_tasks %}
-        {% set followup_class = task.follow_up_date|followup_style(today) %}
-        <div class="task {{ followup_class }}" id="task-{{ task.id }}" data-task-id="{{ task.id }}">
-            <!-- ステータスボタン -->
-            <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
-                {% if task.status == 'not_started' %}未着手
-                {% elif task.status == 'pending' %}保留中
-                {% elif task.status == 'in_progress' %}進行中
-                {% elif task.status == 'completed' %}完了
-                {% else %}不明{% endif %}
-            </button>
-
-            <!-- タイトルリンク -->
-            <a href="#" class="task-title-link" onclick="window.loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">
-                {{ task.title }}
-            </a>
-
-            <!-- フォロー日（クリックで編集可能） -->
-            <span class="follow-up-date" data-task-id="{{ task.id }}" onclick="window.editFollowUpDate({{ task.id }})">
-                フォロー日: <span id="follow-up-date-display-{{ task.id }}">{{ task.follow_up_date|format_date }}</span>
-                <!-- 削除ボタンを追加 -->
-                <button class="btn btn-sm btn-danger ml-2" onclick="event.stopPropagation(); window.deleteFollowUpDate({{ task.id }})">
-                    <i class="fas fa-times"></i>
-                </button>
-            </span>
-
-            <!-- タスク削除ボタン -->
-            <button class="delete-task-button" onclick="window.deleteTaskFromDashboard({{ task.id }})" title="タスクを削除">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-        {% endfor %}
-        {% else %}
-        <p>タスクがありません。</p>
-        {% endif %}
+    <div class="tab-button" id="button-{{ person.id }}" onclick="window.showTab({{ person.id }})">
+        {{ person.name }}
     </div>
     {% endfor %}
+</div>
+{% for person in people %}
+<div class="tab" id="tab-{{ person.id }}">
+    <h2>{{ person.name }}のタスク</h2>
+    {% set sorted_tasks = person.sorted_tasks_title %}
+    {% if sorted_tasks %}
+    {% for task in sorted_tasks %}
+    {% set followup_class = task.follow_up_date|followup_style(today) %}
+    <div class="task {{ followup_class }}" id="task-{{ task.id }}" data-task-id="{{ task.id }}">
+        <!-- ステータスボタンの表示 -->
+        <button id="status-button-{{ task.id }}" onclick="window.cycleStatus({{ task.id }})" class="status-button {{ task.status }}">
+            {% if task.status == 'not_started' %}未着手
+            {% elif task.status == 'pending' %}保留中
+            {% elif task.status == 'in_progress' %}進行中
+            {% elif task.status == 'completed' %}完了
+            {% else %}不明{% endif %}
+        </button>
 
-    <!-- JavaScriptを追加 -->
-    <script>
-        window.showTab = function(personId) {
-            // すべてのタブを非表示
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            // すべてのタブボタンからactiveクラスを削除
-            document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
-            // 選択されたタブを表示
-            document.getElementById('tab-' + personId).classList.add('active');
-            // 選択されたボタンにactiveクラスを追加
-            document.getElementById('button-' + personId).classList.add('active');
-        };
+        <!-- タイトルをリンクに変更 -->
+        <a href="#" class="task-title-link" onclick="window.loadContent('/person_tasks/{{ task.person_id }}', 'task-{{ task.id }}')">
+            {{ task.title }}
+        </a>
 
-        // ページロード時に最初のタブを表示
-        window.onload = function() {
-            const firstPerson = {{ people[0].id if people else 'null' }};
-            if (firstPerson !== 'null') {
-                window.showTab(firstPerson);
+        <!-- フォロー日と削除ボタン（削除ボタンを削除） -->
+        <span class="follow-up-date" data-task-id="{{ task.id }}" onclick="window.editFollowUpDate({{ task.id }})">
+            フォロー日: <span id="follow-up-date-display-{{ task.id }}">{{ task.follow_up_date|format_date }}</span>
+        </span>
+
+        <!-- 新たに追加された削除ボタン -->
+        <button class="btn btn-sm btn-danger delete-task-button" onclick="window.deleteTaskFromDashboard({{ task.id }})">
+            <i class="fas fa-trash"></i>
+        </button>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>タスクがありません。</p>
+    {% endif %}
+</div>
+{% endfor %}
+
+<!-- 必要なスタイルを追加 -->
+<style>
+    /* タブのスタイル */
+    .tab {
+        display: none;
+    }
+    .tab.active {
+        display: block;
+    }
+    .tab-buttons {
+        display: flex;
+        margin-bottom: 10px;
+    }
+    .tab-button {
+        padding: 10px;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        margin-right: 5px;
+    }
+    .tab-button.active {
+        font-weight: bold;
+        background-color: #eee;
+    }
+    /* タスクのスタイル */
+    .task {
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        display: flex;
+        align-items: center;
+    }
+    /* フォロー日の背景色と文字色 */
+    .task.today {
+        background-color: #FFCDD2; /* 薄い赤色 */
+        color: black;
+    }
+    .task.overdue {
+        background-color: #FFC0CB; /* ピンク色 */
+        color: black;
+    }
+    /* ステータスボタンのスタイル */
+    .status-button {
+        width: 100px; /* 幅を固定して左端を揃える */
+        padding: 5px 10px;
+        border-radius: 3px;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+    .status-button.pending {
+        background-color: orange;
+    }
+    .status-button.in_progress {
+        background-color: blue;
+    }
+    .status-button.completed {
+        background-color: green;
+    }
+    .task-title-link {
+        margin-right: 10px;
+        flex-grow: 1;
+        text-decoration: none;
+        color: white; /* 白い文字 */
+    }
+    .task-title-link:hover {
+        text-decoration: underline;
+    }
+    .follow-up-date {
+        margin-right: 10px;
+        flex-shrink: 0;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+    }
+    /* 削除ボタンのスタイル調整（不要なスタイルは削除） */
+    /* 新たに追加された削除ボタンのスタイル */
+    .delete-task-button {
+        padding: 0.25rem 0.5rem;
+        margin-left: 10px;
+    }
+    .delete-task-button i {
+        font-size: 0.875rem;
+    }
+    /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
+    .task.today .task-title-link,
+    .task.overdue .task-title-link {
+        color: black; /* 黒い文字 */
+    }
+</style>
+
+<!-- JavaScriptを追加 -->
+<script>
+    window.editFollowUpDate = function(taskId) {
+        var dateSpan = document.getElementById('follow-up-date-display-' + taskId);
+        var currentDate = dateSpan.textContent.trim();
+        var newInput = document.createElement('input');
+        newInput.type = 'date';
+        // 現在の日付を取得してセット
+        var dateValue = '';
+        if (currentDate !== '未設定') {
+            // 'YYYY年MM月DD日' を 'YYYY-MM-DD' に変換
+            var match = currentDate.match(/(\d{4})年(\d{2})月(\d{2})日/);
+            if (match) {
+                dateValue = match[1] + '-' + match[2] + '-' + match[3];
             }
-        };
+        }
+        newInput.value = dateValue;
+        dateSpan.parentNode.replaceChild(newInput, dateSpan);
 
-        window.editFollowUpDate = function(taskId) {
-            var dateSpan = document.getElementById('follow-up-date-display-' + taskId);
-            var currentDate = dateSpan.textContent.trim();
-            var newInput = document.createElement('input');
-            newInput.type = 'date';
-            // 現在の日付を取得してセット
-            var dateValue = '';
-            if (currentDate !== '未設定') {
-                // 'YYYY年MM月DD日' を 'YYYY-MM-DD' に変換
-                var match = currentDate.match(/(\d{4})年(\d{2})月(\d{2})日/);
-                if (match) {
-                    dateValue = match[1] + '-' + match[2] + '-' + match[3];
-                }
-            }
-            newInput.value = dateValue;
-            dateSpan.parentNode.replaceChild(newInput, dateSpan);
+        newInput.focus();
 
-            newInput.focus();
-
-            newInput.addEventListener('blur', function() {
-                var newDate = newInput.value;
-                var formData = new FormData();
-                formData.append('new_date', newDate);
-                fetch('/update_follow_up_date/' + taskId, {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // 新しい日付を表示
-                    var newDateText = '未設定';
-                    if (data.new_date) {
-                        var dateObj = new Date(data.new_date);
-                        var year = dateObj.getFullYear();
-                        var month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                        var day = String(dateObj.getDate()).padStart(2, '0');
-                        newDateText = year + '年' + month + '月' + day + '日';
-                    }
-                    var newSpan = document.createElement('span');
-                    newSpan.id = 'follow-up-date-display-' + taskId;
-                    newSpan.textContent = newDateText;
-                    newInput.parentNode.replaceChild(newSpan, newInput);
-
-                    // タスクの背景色を即時更新
-                    var taskElement = document.getElementById('task-' + taskId);
-                    if (taskElement) {
-                        taskElement.classList.remove('today', 'overdue');
-                        if (data.new_date) {
-                            var today = new Date();
-                            today.setHours(0, 0, 0, 0);
-                            var selectedDate = new Date(data.new_date);
-                            selectedDate.setHours(0, 0, 0, 0);
-                            if (selectedDate.getTime() === today.getTime()) {
-                                taskElement.classList.add('today');
-                            } else if (selectedDate < today) {
-                                taskElement.classList.add('overdue');
-                            }
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('エラーが発生しました:', error);
-                    // エラーハンドリング（必要に応じて追加）
-                });
-        };
-
-        window.deleteFollowUpDate = function(taskId) {
-            if (!confirm('フォロー日を削除してもよろしいですか？')) {
-                return;
-            }
-            
+        newInput.addEventListener('blur', function() {
+            var newDate = newInput.value;
             var formData = new FormData();
-            formData.append('new_date', '');  // 空の日付を送信して削除
-
+            formData.append('new_date', newDate);
             fetch('/update_follow_up_date/' + taskId, {
                 method: 'POST',
                 body: formData,
@@ -275,116 +168,96 @@
             })
             .then(response => response.json())
             .then(data => {
-                var dateSpan = document.getElementById('follow-up-date-display-' + taskId);
-                dateSpan.textContent = '未設定';
-                
-                // タスクの背景色を更新
+                // 新しい日付を表示
+                var newDateText = '未設定';
+                if (data.new_date) {
+                    var dateObj = new Date(data.new_date);
+                    newDateText = dateObj.getFullYear() + '年' + String(dateObj.getMonth() + 1).padStart(2, '0') + '月' + String(dateObj.getDate()).padStart(2, '0') + '日';
+                }
+                var newSpan = document.createElement('span');
+                newSpan.id = 'follow-up-date-display-' + taskId;
+                newSpan.textContent = newDateText;
+                newInput.parentNode.replaceChild(newSpan, newInput);
+
+                // タスクの背景色を即時更新
                 var taskElement = document.getElementById('task-' + taskId);
                 if (taskElement) {
                     taskElement.classList.remove('today', 'overdue');
+                    if (data.new_date) {
+                        var today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        var selectedDate = new Date(data.new_date);
+                        if (selectedDate.getTime() === today.getTime()) {
+                            taskElement.classList.add('today');
+                        } else if (selectedDate < today) {
+                            taskElement.classList.add('overdue');
+                        }
+                    }
                 }
             })
             .catch(error => {
                 console.error('エラーが発生しました:', error);
-                alert('フォロー日の削除中にエラーが発生しました。');
+                // エラーハンドリング（必要に応じて追加）
             });
-        };
+        });
+    };
 
-        // ダッシュボードからのタスク削除機能
-        window.deleteTaskFromDashboard = function(taskId) {
-            if (!confirm('本当に削除しますか？')) {
-                return;
+    // フォロー日削除用の関数を削除
+    /*
+    window.deleteFollowUpDate = function(taskId) {
+        if (!confirm('フォロー日を削除してもよろしいですか？')) {
+            return;
+        }
+        
+        var formData = new FormData();
+        formData.append('new_date', '');  // 空の日付を送信して削除
+
+        fetch('/update_follow_up_date/' + taskId, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            var dateSpan = document.getElementById('follow-up-date-display-' + taskId);
+            dateSpan.textContent = '未設定';
+            
+            // タスクの背景色を更新
+            var taskElement = document.getElementById('task-' + taskId);
+            if (taskElement) {
+                taskElement.classList.remove('today', 'overdue');
             }
+        })
+        .catch(error => {
+            console.error('エラーが発生しました:', error);
+            alert('フォロー日の削除中にエラーが発生しました。');
+        });
+    };
+    */
 
-            fetch('/delete/' + taskId, {
-                method: 'POST',
-                credentials: 'include'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                // タスク要素を画面から削除
-                const taskElement = document.getElementById('task-' + taskId);
-                if (taskElement) {
-                    taskElement.remove();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('タスクの削除中にエラーが発生しました。');
-            });
-        };
+    // ダッシュボードからのタスク削除機能
+    window.deleteTaskFromDashboard = function(taskId) {
+        if (!confirm('本当に削除しますか？')) {
+            return;
+        }
 
-        window.cycleStatus = function(taskId) {
-            // ステータスのサイクル処理（例）
-            const statusOrder = ['not_started', 'pending', 'in_progress', 'completed'];
-            const statusButton = document.getElementById('status-button-' + taskId);
-            let currentStatus = statusButton.classList.contains('not_started') ? 'not_started' :
-                                statusButton.classList.contains('pending') ? 'pending' :
-                                statusButton.classList.contains('in_progress') ? 'in_progress' :
-                                statusButton.classList.contains('completed') ? 'completed' : 'unknown';
-            let currentIndex = statusOrder.indexOf(currentStatus);
-            let nextIndex = (currentIndex + 1) % statusOrder.length;
-            let nextStatus = statusOrder[nextIndex];
-
-            // 更新されたステータスをサーバーに送信
-            const formData = new FormData();
-            formData.append('status', nextStatus);
-
-            fetch('/update_status/' + taskId, {
-                method: 'POST',
-                body: formData,
-                credentials: 'include'
-            })
-            .then(response => response.json())
-            .then(data => {
-                // ステータスボタンのクラスとテキストを更新
-                statusButton.classList.remove(...statusOrder, 'unknown');
-                statusButton.classList.add(nextStatus);
-                let statusText = '';
-                switch(nextStatus) {
-                    case 'not_started':
-                        statusText = '未着手';
-                        break;
-                    case 'pending':
-                        statusText = '保留中';
-                        break;
-                    case 'in_progress':
-                        statusText = '進行中';
-                        break;
-                    case 'completed':
-                        statusText = '完了';
-                        break;
-                    default:
-                        statusText = '不明';
-                }
-                statusButton.textContent = statusText;
-            })
-            .catch(error => {
-                console.error('エラーが発生しました:', error);
-                alert('ステータスの更新中にエラーが発生しました。');
-            });
-        };
-
-        window.loadContent = function(url, taskId) {
-            // コンテンツを読み込む処理（例）
-            fetch(url, {
-                method: 'GET',
-                credentials: 'include'
-            })
-            .then(response => response.text())
-            .then(html => {
-                // タスク詳細を表示するエリアを指定
-                // ここでは仮にモーダルを表示するなどの実装が必要です
-                // 例:
-                alert('タスク詳細を表示する処理を実装してください。');
-            })
-            .catch(error => {
-                console.error('エラーが発生しました:', error);
-                alert('タスクの読み込み中にエラーが発生しました。');
-            });
-        };
-    </script>
-</body>
-</html>
+        fetch('/delete/' + taskId, {
+            method: 'POST',
+            credentials: 'include'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            // タスク要素を画面から削除
+            const taskElement = document.getElementById('task-' + taskId);
+            if (taskElement) {
+                taskElement.remove();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('タスクの削除中にエラーが発生しました。');
+        });
+    };
+</script>
