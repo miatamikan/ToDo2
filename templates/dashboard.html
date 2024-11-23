@@ -36,6 +36,11 @@
                 <i class="fas fa-times"></i>
             </button>
         </span>
+
+        <!-- 新たに追加された削除ボタン -->
+        <button class="btn btn-sm btn-danger delete-task-button" onclick="window.deleteTaskFromDashboard({{ task.id }})">
+            <i class="fas fa-trash"></i>
+        </button>
     </div>
     {% endfor %}
     {% else %}
@@ -124,6 +129,14 @@
         padding: 2px 5px;
         font-size: 0.8em;
     }
+    /* 新たに追加された削除ボタンのスタイル */
+    .delete-task-button {
+        padding: 0.25rem 0.5rem;
+        margin-left: 10px;
+    }
+    .delete-task-button i {
+        font-size: 0.875rem;
+    }
     /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
     .task.today .task-title-link,
     .task.overdue .task-title-link {
@@ -194,11 +207,9 @@
                 console.error('エラーが発生しました:', error);
                 // エラーハンドリング（必要に応じて追加）
             });
-    });
+        });
     };
 
-    // dashboard.htmlに追加するJavaScript
-    // フォロー日の横に削除ボタンを追加し、クリックでフォロー日を削除する機能
     window.deleteFollowUpDate = function(taskId) {
         if (!confirm('フォロー日を削除してもよろしいですか？')) {
             return;
@@ -226,6 +237,32 @@
         .catch(error => {
             console.error('エラーが発生しました:', error);
             alert('フォロー日の削除中にエラーが発生しました。');
+        });
+    };
+
+    // ダッシュボードからのタスク削除機能
+    window.deleteTaskFromDashboard = function(taskId) {
+        if (!confirm('本当に削除しますか？')) {
+            return;
+        }
+
+        fetch('/delete/' + taskId, {
+            method: 'POST',
+            credentials: 'include'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            // タスク要素を画面から削除
+            const taskElement = document.getElementById('task-' + taskId);
+            if (taskElement) {
+                taskElement.remove();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('タスクの削除中にエラーが発生しました。');
         });
     };
 </script>
