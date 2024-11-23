@@ -390,9 +390,32 @@
         // 並び替えオプションが変更されたときに再読み込み
         document.getElementById('sort-option').addEventListener('change', function() {
             let currentUrl = $('#main-content-area').data('current-url');
+            let personId = new URLSearchParams(window.location.search).get('person_id');
+            
+            // URLが未設定の場合のデフォルト設定
             if (!currentUrl) {
-                currentUrl = '/all_tasks';
+                if (personId) {
+                    currentUrl = '/person_tasks/' + personId;
+                } else {
+                    currentUrl = '/all_tasks';
+                }
             }
+            
+            // 現在のソートオプションを取得
+            let sortOption = this.value;
+            
+            // URLにソートパラメータを追加
+            if (currentUrl.includes('?')) {
+                // すでにクエリパラメータがある場合
+                let url = new URL(window.location.origin + currentUrl);
+                url.searchParams.set('sort', sortOption);
+                currentUrl = url.pathname + url.search;
+            } else {
+                // クエリパラメータがない場合
+                currentUrl += '?sort=' + sortOption;
+            }
+            
+            // コンテンツを再読み込み
             window.loadContent(currentUrl);
         });
 
