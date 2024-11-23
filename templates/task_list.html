@@ -73,11 +73,10 @@
                                 <a href="{{ upload.url }}" target="_blank" class="btn btn-sm btn-outline-primary btn-icon" title="ダウンロード">
                                     <i class="fas fa-download"></i>
                                 </a>
-                                <form action="{{ url_for('delete_file', id=upload.id) }}" method="POST" style="display:inline;">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" onclick="return confirm('このファイルを削除してもよろしいですか？');" title="削除">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-icon" 
+                                        onclick="window.deleteFile({{ upload.id }})" title="削除">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
                             </div>
                         </div>
                         <small class="d-block text-muted mt-1">アップロード日時: {{ upload.upload_time | format_datetime_jst }}</small>
@@ -91,9 +90,10 @@
                 <button class="btn btn-sm btn-toggle-task mt-2" style="display: none;">もっと見る</button>
                 
                 <!-- 削除ボタンと編集ボタン -->
-                <form method="POST" action="/delete/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" style="display:inline;">
-                    <button type="submit" class="btn btn-sm btn-danger float-right mr-2" onclick="return confirm('本当に削除しますか？');">削除</button>
-                </form>
+                <button type="button" class="btn btn-sm btn-danger float-right mr-2" 
+                        onclick="window.deleteTask({{ task.id }}, '{{ person_id }}', '{{ sort_option }}')">
+                    削除
+                </button>
                 <a href="/edit/{{ task.id }}?person_id={{ person_id }}&sort={{ sort_option }}" class="btn btn-sm btn-info float-right">編集</a>
             </li>
             {% endfor %}
@@ -165,6 +165,18 @@
         border-bottom: 2px solid #eee;
         padding-bottom: 0.5rem;
     }
+
+    /* 追加されたスタイル */
+    .follow-up-date button {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        border-radius: 0.2rem;
+    }
+    
+    .follow-up-date button i {
+        font-size: 0.75rem;
+    }
 </style>
 
 <!-- JavaScript -->
@@ -203,4 +215,67 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// タスク削除をAjax化する機能
+window.deleteTask = function(taskId, personId, sortOption) {
+    if (!confirm('本当に削除しますか？')) {
+        return;
+    }
+
+    fetch('/delete/' + taskId + '?person_id=' + encodeURIComponent(personId) + '&sort=' + encodeURIComponent(sortOption), {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({}) // 必要に応じてCSRFトークンなどを追加
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        // タスク要素を画面から削除
+        const taskElement = document.getElementById('task-' + taskId);
+        if (taskElement) {
+            taskElement.remove();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('タスクの削除中にエラーが発生しました。');
+    });
+};
+
+// ファイル削除をAjax化する機能（オプション）
+window.deleteFile = function(uploadId) {
+    if (!confirm('このファイルを削除してもよろしいですか？')) {
+        return;
+    }
+
+    fetch('/delete_file/' + uploadId, { // エンドポイントは適宜変更してください
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({}) // 必要に応じてCSRFトークンなどを追加
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        // ファイルカードを削除
+        const fileButton = event.target;
+        const fileCard = fileButton.closest('.col-lg-2, .col-md-3, .col-sm-4, .col-6');
+        if (fileCard) {
+            fileCard.remove();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('ファイルの削除中にエラーが発生しました。');
+    });
+};
 </script>
