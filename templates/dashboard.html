@@ -28,9 +28,13 @@
             {{ task.title }}
         </a>
 
-        <!-- フォロー日 -->
+        <!-- フォロー日と削除ボタン -->
         <span class="follow-up-date" data-task-id="{{ task.id }}" onclick="window.editFollowUpDate({{ task.id }})">
             フォロー日: <span id="follow-up-date-display-{{ task.id }}">{{ task.follow_up_date|format_date }}</span>
+            <!-- 削除ボタンを追加 -->
+            <button class="btn btn-sm btn-danger ml-2" onclick="event.stopPropagation(); window.deleteFollowUpDate({{ task.id }})">
+                <i class="fas fa-times"></i>
+            </button>
         </span>
     </div>
     {% endfor %}
@@ -112,6 +116,13 @@
         margin-right: 10px;
         flex-shrink: 0;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+    }
+    /* 削除ボタンのスタイル調整 */
+    .follow-up-date .btn {
+        padding: 2px 5px;
+        font-size: 0.8em;
     }
     /* 背景がピンク色の場合にリンクの文字色を黒に変更 */
     .task.today .task-title-link,
@@ -183,6 +194,38 @@
                 console.error('エラーが発生しました:', error);
                 // エラーハンドリング（必要に応じて追加）
             });
+    });
+    };
+
+    // dashboard.htmlに追加するJavaScript
+    // フォロー日の横に削除ボタンを追加し、クリックでフォロー日を削除する機能
+    window.deleteFollowUpDate = function(taskId) {
+        if (!confirm('フォロー日を削除してもよろしいですか？')) {
+            return;
+        }
+        
+        var formData = new FormData();
+        formData.append('new_date', '');  // 空の日付を送信して削除
+
+        fetch('/update_follow_up_date/' + taskId, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            var dateSpan = document.getElementById('follow-up-date-display-' + taskId);
+            dateSpan.textContent = '未設定';
+            
+            // タスクの背景色を更新
+            var taskElement = document.getElementById('task-' + taskId);
+            if (taskElement) {
+                taskElement.classList.remove('today', 'overdue');
+            }
+        })
+        .catch(error => {
+            console.error('エラーが発生しました:', error);
+            alert('フォロー日の削除中にエラーが発生しました。');
         });
     };
 </script>
